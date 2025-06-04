@@ -1,7 +1,7 @@
 const orderTypeRadios = document.querySelectorAll('input[name="orderType"]');
 const pickupFields = document.getElementById('pickupFields');
 const deliveryFields = document.getElementById('deliveryFields');
-const boxesInput = document.getElementById('boxes');
+const boxesSelect = document.getElementById('boxes');
 const totalPriceSpan = document.getElementById('totalPrice');
 const orderSummaryDiv = document.getElementById('orderSummary');
 const mapModal = document.getElementById('mapModal');
@@ -15,6 +15,18 @@ const locateMeBtn = document.getElementById('locateMeBtn');
 
 let deliveryFee = 35;
 let map, marker;
+
+// Populate boxes dropdown
+function populateBoxesDropdown() {
+  boxesSelect.innerHTML = '';
+  for (let i = 1; i <= 30; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `${i} box${i > 1 ? 'es' : ''}`;
+    boxesSelect.appendChild(option);
+  }
+}
+populateBoxesDropdown();
 
 // --- FORM LOGIC ---
 function updateFields() {
@@ -40,10 +52,10 @@ function updateFields() {
 }
 function updateTotal() {
   const orderType = document.querySelector('input[name="orderType"]:checked').value;
-  let boxes = parseInt(boxesInput.value, 10) || 1;
+  let boxes = parseInt(boxesSelect.value, 10) || 1;
   if (boxes < 1) boxes = 1;
   if (boxes > 30) boxes = 30;
-  boxesInput.value = boxes;
+  boxesSelect.value = boxes;
   let total = boxes * 50;
   if (orderType === 'delivery') total += deliveryFee;
   totalPriceSpan.textContent = total;
@@ -52,7 +64,7 @@ function updateTotal() {
     (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
 }
 orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
-boxesInput.addEventListener('input', updateTotal);
+boxesSelect.addEventListener('change', updateTotal);
 updateFields();
 
 document.getElementById('orderForm').addEventListener('submit', (e) => {
