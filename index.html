@@ -8,42 +8,57 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Animated Gradient Background -->
   <div class="gradient-bg"></div>
   <main class="order-main">
     <h1>Order Bunku Bread</h1>
     <p class="subtitle">Freshly baked, home-based, and delivered with love in the UAE.</p>
-    <form class="order-form">
+    <form class="order-form" id="orderForm" autocomplete="off">
+      <div class="order-type-row">
+        <label>
+          <input type="radio" name="orderType" value="pickup" checked>
+          Pick Up
+        </label>
+        <label>
+          <input type="radio" name="orderType" value="delivery">
+          Delivery (+35 AED)
+        </label>
+      </div>
       <label>
-        Your Name<br>
-        <input type="text" name="name" required>
+        First Name<br>
+        <input type="text" name="firstName" required>
       </label>
+      <label>
+        Last Name<br>
+        <input type="text" name="lastName" required>
+      </label>
+      <label>
+        City<br>
+        <input type="text" name="city" required>
+      </label>
+      <div id="licensePlateField">
+        <label>
+          License Plate<br>
+          <input type="text" name="licensePlate" maxlength="15" placeholder="e.g. D 12345">
+        </label>
+      </div>
       <label>
         Phone Number<br>
-        <input type="tel" name="phone" required>
+        <input type="tel" name="phone" required pattern="[\d\s+()-]{6,}">
       </label>
       <label>
-        Email<br>
-        <input type="email" name="email" required>
+        Location (Google Maps link)
+        <button type="button" class="maps-btn" onclick="window.open('https://maps.google.com', '_blank')"
+          title="Open Google Maps in a new tab">📍</button><br>
+        <input type="url" name="location" placeholder="Paste your Google Maps link here" required>
       </label>
       <label>
-        What would you like to order?<br>
-        <select name="product" required>
-          <option value="">Select an item</option>
-          <option value="classic">Classic Bunku Bread</option>
-          <option value="chocolate">Chocolate Bunku Bread</option>
-          <option value="cheese">Cheese Bunku Bread</option>
-          <option value="custom">Custom Order (describe below)</option>
-        </select>
+        Amount of Boxes
+        <span class="info-icon" title="Each box contains 4 pieces of bread.">ℹ️</span><br>
+        <input type="number" name="boxes" id="boxes" min="1" max="30" value="1" required>
       </label>
-      <label>
-        Quantity<br>
-        <input type="number" name="quantity" min="1" max="20" value="1" required>
-      </label>
-      <label>
-        Notes / Customization<br>
-        <textarea name="notes" rows="3" placeholder="Anything else?"></textarea>
-      </label>
+      <div class="order-summary" id="orderSummary">
+        Total: <span id="totalPrice">50</span> AED
+      </div>
       <button type="submit">Place Order</button>
     </form>
     <div class="order-info">
@@ -51,5 +66,49 @@
       <p>Questions? DM us on <a href="https://instagram.com/Bunku.uae" target="_blank">@Bunku.uae</a> or WhatsApp 054 458 8113.</p>
     </div>
   </main>
+  <script>
+    // Conditional License Plate field
+    const orderTypeRadios = document.querySelectorAll('input[name="orderType"]');
+    const licensePlateField = document.getElementById('licensePlateField');
+    const boxesInput = document.getElementById('boxes');
+    const totalPriceSpan = document.getElementById('totalPrice');
+    const orderSummaryDiv = document.getElementById('orderSummary');
+    let deliveryFee = 35;
+
+    function updateFields() {
+      const orderType = document.querySelector('input[name="orderType"]:checked').value;
+      if (orderType === "pickup") {
+        licensePlateField.style.display = "block";
+      } else {
+        licensePlateField.style.display = "none";
+      }
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const orderType = document.querySelector('input[name="orderType"]:checked').value;
+      let boxes = parseInt(boxesInput.value, 10) || 1;
+      if (boxes < 1) boxes = 1;
+      if (boxes > 30) boxes = 30;
+      boxesInput.value = boxes;
+      let total = boxes * 50;
+      if (orderType === "delivery") total += deliveryFee;
+      totalPriceSpan.textContent = total;
+      orderSummaryDiv.innerHTML = `Total: <span id="totalPrice">${total}</span> AED` +
+        (orderType === "delivery" ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : "");
+    }
+
+    orderTypeRadios.forEach(radio => radio.addEventListener('change', updateFields));
+    boxesInput.addEventListener('input', updateTotal);
+
+    // Initialize on page load
+    updateFields();
+
+    // Prevent form submission (for demo)
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Order submitted! (Hook up to Supabase or your backend to process orders.)');
+    });
+  </script>
 </body>
 </html>
