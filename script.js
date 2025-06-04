@@ -19,25 +19,41 @@ let deliveryFee = 35;
 let map, marker;
 
 // --- Phone Number Masking and Validation ---
+function formatUAEPhone(value) {
+  let val = value.replace(/\D/g, '');
+  if (val.length > 9) val = val.slice(0, 9);
+  let out = '';
+  if (val.length > 0) out += '(' + val.slice(0,2);
+  if (val.length >= 2) out += ') ';
+  if (val.length >= 5) {
+    out += val.slice(2,5) + '-';
+    out += val.slice(5,9);
+  } else if (val.length > 2) {
+    out += val.slice(2,5);
+  }
+  return out;
+}
+
 phoneInput.value = "";
 phoneInput.addEventListener('input', function(e) {
-  let val = phoneInput.value.replace(/\D/g, '');
-  if (val.length > 9) val = val.slice(0, 9);
-  let formatted = '';
-  if (val.length > 0) {
-    formatted = '(' + val.slice(0,2);
-    if (val.length >= 2) formatted += ') ';
-    if (val.length >= 5) {
-      formatted += val.slice(2,5) + '-';
-      formatted += val.slice(5,9);
-    } else if (val.length > 2) {
-      formatted += val.slice(2,5);
-    }
-  }
+  let pos = phoneInput.selectionStart;
+  let before = phoneInput.value;
+  let formatted = formatUAEPhone(before);
+
   phoneInput.value = formatted;
+
+  // Keep caret position intuitive
+  if (formatted.length > before.length && (pos === 3 || pos === 9)) pos++;
+  if (formatted.length < before.length && (pos === 5 || pos === 10)) pos--;
+  phoneInput.setSelectionRange(pos, pos);
 });
-phoneInput.addEventListener('focus', function() {
-  if (phoneInput.value.trim() === '') phoneInput.value = '';
+
+phoneInput.addEventListener('blur', function() {
+  if (phoneInput.value && !/^\(5\d\) \d{3}-\d{4}$/.test(phoneInput.value)) {
+    phoneInput.classList.add('input-error');
+  } else {
+    phoneInput.classList.remove('input-error');
+  }
 });
 
 // --- Responsive Boxes Input ---
@@ -52,7 +68,6 @@ function populateBoxesDropdown() {
 }
 populateBoxesDropdown();
 
-// Keep both inputs in sync
 boxesInput.addEventListener('input', () => {
   boxesSelect.value = boxesInput.value;
   updateTotal();
@@ -102,7 +117,162 @@ orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields
 updateFields();
 
 // --- MAP LOGIC ---
-// (Use your previous working map code for Leaflet, unchanged.)
+function destroyMap() {
+  if (map) {
+    map.remove();
+    map = null;
+    marker = null;
+  }
+}
+
+function geocodeAndOpenMap() {
+  const city = cityInput.value.trim();
+  const street = streetInput.value.trim();
+  let query = '';
+  if (city && street) {
+    query = encodeURIComponent(`${street}, ${city}, UAE`);
+  } else if (city) {
+    query = encodeURIComponent(`${city}, UAE`);
+  }
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = true;
+  setTimeout(() => {
+    destroyMap();
+    let center = [25.276987, 55.296249];
+    let zoom = 12;
+    if (query) {
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            center = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            zoom = 15;
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          showMap(center, zoom, false);
+        });
+    } else {
+      showMap(center, zoom, false);
+    }
+  }, 150);
+}
+
+function openMapWithCoords(coords) {
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = true;
+  setTimeout(() => {
+    destroyMap();
+    let center = coords || [25.276987, 55.296249];
+    let zoom = 17;
+    showMap(center, zoom, true);
+  }, 150);
+}
+
+function showMap(center, zoom, placeMarker=false) {
+  map = L.map('map').setView(center, zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+
+  marker = null;
+  if (placeMarker) {
+    marker = L.marker(center, { draggable: true }).addTo(map);
+    confirmLocation.disabled = false;
+    locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
+    marker.on('dragend', function () {
+      const pos = marker.getLatLng();
+      locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+    });
+  } else {
+    confirmLocation.disabled = true;
+  }
+  map.on('click', function (e) {
+    if (!marker) {
+      marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+      confirmLocation.disabled = false;
+      marker.on('dragend', function () {
+        const pos = marker.getLatLng();
+        locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+      });
+    } else {
+      marker.setLatLng(e.latlng);
+    }
+    const pos = marker.getLatLng();
+    locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+  });
+}
+
+locationInput.addEventListener('click', geocodeAndOpenMap);
+locationInput.addEventListener('focus', geocodeAndOpenMap);
+
+closeMapModal.addEventListener('click', () => {
+  mapModal.style.display = 'none';
+  destroyMap();
+});
+window.addEventListener('click', (e) => {
+  if (e.target === mapModal) {
+    mapModal.style.display = 'none';
+    destroyMap();
+  }
+});
+confirmLocation.addEventListener('click', () => {
+  if (!marker) return;
+  const pos = marker.getLatLng();
+  locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+  mapModal.style.display = 'none';
+  destroyMap();
+});
+
+locateMeBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  locateMeBtn.textContent = "Locating...";
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = true;
+  setTimeout(() => {
+    destroyMap();
+    document.getElementById('map').innerHTML = '<div style="text-align:center;padding:100px 0;color:#a0522d;">Getting your location...</div>';
+  }, 50);
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    locateMeBtn.textContent = "📍 Locate Me";
+    geocodeAndOpenMap();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      locateMeBtn.textContent = "📍 Locate Me";
+      setTimeout(() => {
+        destroyMap();
+        let center = [pos.coords.latitude, pos.coords.longitude];
+        let zoom = 17;
+        map = L.map('map').setView(center, zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+        marker = L.marker(center, { draggable: true }).addTo(map);
+        confirmLocation.disabled = false;
+        locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
+        marker.on('dragend', function () {
+          const pos = marker.getLatLng();
+          locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+        });
+        map.on('click', function (e) {
+          marker.setLatLng(e.latlng);
+          locationInput.value = `https://maps.google.com/?q=${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
+        });
+      }, 100);
+    },
+    function() {
+      locateMeBtn.textContent = "📍 Locate Me";
+      alert('Unable to retrieve your location.');
+      mapModal.style.display = 'none';
+    }
+  );
+});
 
 // --- INFO ICON TOOLTIP ---
 let infoTooltip;
