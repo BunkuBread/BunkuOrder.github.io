@@ -104,16 +104,6 @@ h1 {
 .order-form button[type='submit']:hover {
   background: #ffa500;
 }
-.maps-btn, .gps-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1em;
-  margin-left: 4px;
-  color: #ffb347;
-  vertical-align: middle;
-  padding: 0 2px;
-}
 .info-icon {
   font-size: 1em;
   margin-left: 4px;
@@ -189,7 +179,12 @@ h1 {
   cursor: pointer;
   transition: background 0.2s;
 }
-.confirm-btn:hover { background: #ffa500; }
+.confirm-btn:disabled {
+  background: #ffd699;
+  color: #fff;
+  cursor: not-allowed;
+}
+.confirm-btn:hover:not(:disabled) { background: #ffa500; }
 .map-instructions {
   font-size: 1em;
   color: #a0522d;
