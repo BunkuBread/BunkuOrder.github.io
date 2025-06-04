@@ -11,10 +11,12 @@ const locationInput = document.getElementById('locationInput');
 const infoIcon = document.getElementById('infoIcon');
 const cityInput = document.getElementById('cityInput');
 const streetInput = document.getElementById('streetInput');
+const locateMeBtn = document.getElementById('locateMeBtn');
 
 let deliveryFee = 35;
 let map, marker;
 
+// --- FORM LOGIC ---
 function updateFields() {
   const orderType = document.querySelector('input[name="orderType"]:checked').value;
   if (orderType === 'pickup') {
@@ -36,7 +38,6 @@ function updateFields() {
   }
   updateTotal();
 }
-
 function updateTotal() {
   const orderType = document.querySelector('input[name="orderType"]:checked').value;
   let boxes = parseInt(boxesInput.value, 10) || 1;
@@ -50,8 +51,16 @@ function updateTotal() {
     `Total: <span id="totalPrice">${total}</span> AED` +
     (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
 }
+orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
+boxesInput.addEventListener('input', updateTotal);
+updateFields();
 
-// --------- MAP LOGIC ---------
+document.getElementById('orderForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  alert('Order submitted! (Connect to your backend or Supabase to process.)');
+});
+
+// --- MAP LOGIC ---
 function destroyMap() {
   if (map) {
     map.remove();
@@ -60,8 +69,8 @@ function destroyMap() {
   }
 }
 
+// Geocode city/street and open map
 function geocodeAndOpenMap() {
-  // 1. Try to get city/street from input
   const city = cityInput.value.trim();
   const street = streetInput.value.trim();
   let query = '';
@@ -70,18 +79,13 @@ function geocodeAndOpenMap() {
   } else if (city) {
     query = encodeURIComponent(`${city}, UAE`);
   }
-
-  // 2. Show modal and initialize map after a short delay
   mapModal.style.display = 'block';
   confirmLocation.disabled = true;
   setTimeout(() => {
     destroyMap();
-    // Default to Dubai
     let center = [25.276987, 55.296249];
     let zoom = 12;
-
     if (query) {
-      // Use Nominatim to geocode
       fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
         .then(res => res.json())
         .then(data => {
@@ -92,27 +96,46 @@ function geocodeAndOpenMap() {
         })
         .catch(() => {})
         .finally(() => {
-          showMap(center, zoom);
+          showMap(center, zoom, false);
         });
     } else {
-      showMap(center, zoom);
+      showMap(center, zoom, false);
     }
   }, 150);
 }
 
-function showMap(center, zoom) {
-  map = L.map('map').setView(center, zoom);
+// Open map at given coordinates (from locate me)
+function openMapWithCoords(coords) {
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = false;
+  setTimeout(() => {
+    destroyMap();
+    let center = coords || [25.276987, 55.296249];
+    let zoom = 16;
+    showMap(center, zoom, true);
+  }, 150);
+}
 
+// Show map, optionally place marker immediately
+function showMap(center, zoom, placeMarker=false) {
+  map = L.map('map').setView(center, zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  // No marker by default!
   marker = null;
-  confirmLocation.disabled = true;
-
-  // Place/move marker on click
+  if (placeMarker) {
+    marker = L.marker(center, { draggable: true }).addTo(map);
+    confirmLocation.disabled = false;
+    locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
+    marker.on('dragend', function () {
+      const pos = marker.getLatLng();
+      locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+    });
+  } else {
+    confirmLocation.disabled = true;
+  }
   map.on('click', function (e) {
     if (!marker) {
       marker = L.marker(e.latlng, { draggable: true }).addTo(map);
@@ -151,7 +174,28 @@ confirmLocation.addEventListener('click', () => {
   destroyMap();
 });
 
-// --------- INFO ICON TOOLTIP ---------
+// --- "Locate Me" Button ---
+locateMeBtn.addEventListener('click', function(e) {
+  e.preventDefault();
+  if (!navigator.geolocation) {
+    alert('Geolocation is not supported by your browser.');
+    return;
+  }
+  locateMeBtn.textContent = "Locating...";
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      locateMeBtn.textContent = "📍 Locate Me";
+      openMapWithCoords([pos.coords.latitude, pos.coords.longitude]);
+    },
+    function() {
+      alert('Unable to retrieve your location.');
+      locateMeBtn.textContent = "📍 Locate Me";
+      geocodeAndOpenMap();
+    }
+  );
+});
+
+// --- INFO ICON TOOLTIP ---
 let infoTooltip;
 infoIcon.addEventListener('click', (e) => {
   e.preventDefault();
@@ -184,15 +228,4 @@ infoIcon.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     infoIcon.click();
   }
-});
-
-// --------- FORM LOGIC ---------
-orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
-boxesInput.addEventListener('input', updateTotal);
-
-updateFields();
-
-document.getElementById('orderForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  alert('Order submitted! (Connect to your backend or Supabase to process.)');
 });
