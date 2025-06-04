@@ -42,20 +42,19 @@
       <div id="deliveryFields" style="display: none;">
         <label>
           City<br />
-          <input type="text" name="city" autocomplete="address-level2" />
-        </label>
-        <label>
-          Location (Pick on map)<br />
-          <button type="button" class="maps-btn" id="openMapBtn" title="Pick location on map">📍</button><br />
-          <input type="text" name="location" id="locationInput" placeholder="Pick your location on the map" readonly required />
+          <input type="text" name="city" id="cityInput" autocomplete="address-level2" />
         </label>
         <label>
           Street / Building Name<br />
-          <input type="text" name="street" autocomplete="address-line1" />
+          <input type="text" name="street" id="streetInput" autocomplete="address-line1" />
         </label>
         <label>
           Villa / Apartment No.<br />
           <input type="text" name="villa" autocomplete="address-line2" />
+        </label>
+        <label>
+          Location (click to select on map)<br />
+          <input type="text" name="location" id="locationInput" placeholder="Click to pick your location on the map" readonly required style="cursor:pointer; background:#fffbe9;" />
         </label>
       </div>
       <label>
@@ -89,7 +88,7 @@
       <h3 id="mapModalTitle">Select your location</h3>
       <div class="map-instructions">Click on the map to select your location.</div>
       <div id="map"></div>
-      <button id="confirmLocation" class="confirm-btn">Confirm Location</button>
+      <button id="confirmLocation" class="confirm-btn" disabled>Confirm Location</button>
     </div>
   </div>
 
