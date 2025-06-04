@@ -235,11 +235,31 @@ h1 {
   margin-bottom: 10px;
 }
 
+.phone-hint {
+  font-size: 0.97em;
+  color: #a0522d;
+  margin-left: 4px;
+}
+.input-error {
+  border: 1.5px solid #e74c3c !important;
+  background: #fff0f0 !important;
+}
+
+/* Hide desktop number input on mobile, show select instead */
+@media (max-width: 700px), (pointer: coarse) {
+  .boxes-desktop { display: none !important; }
+  .boxes-mobile { display: block !important; }
+}
+@media (min-width: 701px) {
+  .boxes-desktop { display: block !important; }
+  .boxes-mobile { display: none !important; }
+}
+
 .info-tooltip {
   position: absolute;
   background: #fffbe9;
   color: #a0522d;
-  border: 1px solid #ffd699;
+  border: 1.5px solid #ffd699;
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 0.98em;
