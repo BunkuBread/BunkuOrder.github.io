@@ -44,6 +44,28 @@ body {
   position: relative;
   z-index: 1;
 }
+.return-btn {
+  display: inline-block;
+  margin: 0 auto 18px auto;
+  padding: 8px 20px;
+  background: #fffbe9;
+  color: #a0522d;
+  border: 1.5px solid #ffd699;
+  border-radius: 22px;
+  font-size: 1.04em;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+  transition: background 0.18s, color 0.18s, border 0.18s;
+}
+.return-btn:hover,
+.return-btn:focus {
+  background: #ffb347;
+  color: #fff;
+  border-color: #ffb347;
+  outline: none;
+}
 .logo-img {
   display: block;
   max-width: 120px;
