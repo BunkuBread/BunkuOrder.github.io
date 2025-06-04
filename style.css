@@ -95,7 +95,7 @@ h1 {
 .order-form button[type="submit"]:hover {
   background: #ffa500;
 }
-.maps-btn {
+.maps-btn, .gps-btn {
   background: none;
   border: none;
   cursor: pointer;
