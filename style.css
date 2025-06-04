@@ -44,6 +44,14 @@ body {
   position: relative;
   z-index: 1;
 }
+.logo-img {
+  display: block;
+  max-width: 120px;
+  width: 50%;
+  margin: 0 auto 16px auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+}
 h1 {
   text-align: center;
   color: #a0522d;
@@ -287,5 +295,10 @@ h1 {
   }
   .pickup-map-responsive {
     padding-bottom: 60%;
+  }
+  .logo-img {
+    max-width: 90px;
+    width: 70%;
+    margin-bottom: 12px;
   }
 }
