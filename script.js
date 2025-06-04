@@ -5,11 +5,12 @@ const boxesInput = document.getElementById('boxes');
 const totalPriceSpan = document.getElementById('totalPrice');
 const orderSummaryDiv = document.getElementById('orderSummary');
 const mapModal = document.getElementById('mapModal');
-const openMapBtn = document.getElementById('openMapBtn');
 const closeMapModal = document.getElementById('closeMapModal');
 const confirmLocation = document.getElementById('confirmLocation');
 const locationInput = document.getElementById('locationInput');
 const infoIcon = document.getElementById('infoIcon');
+const cityInput = document.getElementById('cityInput');
+const streetInput = document.getElementById('streetInput');
 
 let deliveryFee = 35;
 let map, marker;
@@ -50,7 +51,7 @@ function updateTotal() {
     (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
 }
 
-// Map logic
+// --------- MAP LOGIC ---------
 function destroyMap() {
   if (map) {
     map.remove();
@@ -59,66 +60,79 @@ function destroyMap() {
   }
 }
 
-function initMap() {
-  destroyMap();
-  // Center on Dubai
-  map = L.map('map').setView([25.276987, 55.296249], 12);
+function geocodeAndOpenMap() {
+  // 1. Try to get city/street from input
+  const city = cityInput.value.trim();
+  const street = streetInput.value.trim();
+  let query = '';
+  if (city && street) {
+    query = encodeURIComponent(`${street}, ${city}, UAE`);
+  } else if (city) {
+    query = encodeURIComponent(`${city}, UAE`);
+  }
+
+  // 2. Show modal and initialize map after a short delay
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = true;
+  setTimeout(() => {
+    destroyMap();
+    // Default to Dubai
+    let center = [25.276987, 55.296249];
+    let zoom = 12;
+
+    if (query) {
+      // Use Nominatim to geocode
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            center = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+            zoom = 15;
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          showMap(center, zoom);
+        });
+    } else {
+      showMap(center, zoom);
+    }
+  }, 150);
+}
+
+function showMap(center, zoom) {
+  map = L.map('map').setView(center, zoom);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   }).addTo(map);
 
-  // Place marker if a location is already chosen
-  let initialLatLng = [25.276987, 55.296249];
-  if (locationInput.value) {
-    const coords = parseCoordsFromUrl(locationInput.value);
-    if (coords) initialLatLng = coords;
-  }
+  // No marker by default!
+  marker = null;
+  confirmLocation.disabled = true;
 
-  marker = L.marker(initialLatLng, { draggable: true }).addTo(map);
-
-  // Update input when marker is dragged
-  marker.on('dragend', function () {
+  // Place/move marker on click
+  map.on('click', function (e) {
+    if (!marker) {
+      marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+      confirmLocation.disabled = false;
+      marker.on('dragend', function () {
+        const pos = marker.getLatLng();
+        locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+      });
+    } else {
+      marker.setLatLng(e.latlng);
+    }
     const pos = marker.getLatLng();
     locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
   });
-
-  // Update marker and input when map is clicked
-  map.on('click', function (e) {
-    marker.setLatLng(e.latlng);
-    locationInput.value = `https://maps.google.com/?q=${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
-  });
-
-  // Set input value on open
-  locationInput.value = `https://maps.google.com/?q=${initialLatLng[0].toFixed(6)},${initialLatLng[1].toFixed(6)}`;
-}
-
-// Parse coordinates from Google Maps URL
-function parseCoordsFromUrl(url) {
-  try {
-    const urlObj = new URL(url);
-    const q = urlObj.searchParams.get('q');
-    if (!q) return null;
-    const parts = q.split(',');
-    if (parts.length !== 2) return null;
-    const lat = parseFloat(parts[0]);
-    const lng = parseFloat(parts[1]);
-    if (isNaN(lat) || isNaN(lng)) return null;
-    return [lat, lng];
-  } catch {
-    return null;
-  }
 }
 
 // Modal logic
-openMapBtn.addEventListener('click', () => {
-  mapModal.style.display = 'block';
-  setTimeout(() => {
-    initMap();
-    map.invalidateSize();
-  }, 150);
-});
+locationInput.addEventListener('click', geocodeAndOpenMap);
+locationInput.addEventListener('focus', geocodeAndOpenMap);
+
 closeMapModal.addEventListener('click', () => {
   mapModal.style.display = 'none';
   destroyMap();
@@ -137,7 +151,7 @@ confirmLocation.addEventListener('click', () => {
   destroyMap();
 });
 
-// Info icon tooltip (click to show, click away to hide)
+// --------- INFO ICON TOOLTIP ---------
 let infoTooltip;
 infoIcon.addEventListener('click', (e) => {
   e.preventDefault();
@@ -172,7 +186,7 @@ infoIcon.addEventListener('keydown', (e) => {
   }
 });
 
-// Form logic
+// --------- FORM LOGIC ---------
 orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
 boxesInput.addEventListener('input', updateTotal);
 
