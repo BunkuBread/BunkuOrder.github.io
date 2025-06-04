@@ -9,7 +9,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Animated Modern Gradient Background */
 .gradient-bg {
   position: fixed;
   top: 0;
@@ -111,6 +110,17 @@ h1 {
   cursor: pointer;
   vertical-align: middle;
 }
+.locate-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1em;
+  margin-left: 4px;
+  color: #ffb347;
+  vertical-align: middle;
+  padding: 0 2px;
+}
+.locate-btn:active { color: #ffa500; }
 .order-summary {
   background: #fffbe9;
   border: 1px dashed #ffb347;
