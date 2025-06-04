@@ -1,6 +1,55 @@
-!DOCTYPE HTML
-<html>
-  <body>
-    <p>Ignore this, thanks!</p>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bunku Bread Order</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Animated Gradient Background -->
+  <div class="gradient-bg"></div>
+  <main class="order-main">
+    <h1>Order Bunku Bread</h1>
+    <p class="subtitle">Freshly baked, home-based, and delivered with love in the UAE.</p>
+    <form class="order-form">
+      <label>
+        Your Name<br>
+        <input type="text" name="name" required>
+      </label>
+      <label>
+        Phone Number<br>
+        <input type="tel" name="phone" required>
+      </label>
+      <label>
+        Email<br>
+        <input type="email" name="email" required>
+      </label>
+      <label>
+        What would you like to order?<br>
+        <select name="product" required>
+          <option value="">Select an item</option>
+          <option value="classic">Classic Bunku Bread</option>
+          <option value="chocolate">Chocolate Bunku Bread</option>
+          <option value="cheese">Cheese Bunku Bread</option>
+          <option value="custom">Custom Order (describe below)</option>
+        </select>
+      </label>
+      <label>
+        Quantity<br>
+        <input type="number" name="quantity" min="1" max="20" value="1" required>
+      </label>
+      <label>
+        Notes / Customization<br>
+        <textarea name="notes" rows="3" placeholder="Anything else?"></textarea>
+      </label>
+      <button type="submit">Place Order</button>
+    </form>
+    <div class="order-info">
+      <p>After submitting, we’ll contact you to confirm your order and delivery details.</p>
+      <p>Questions? DM us on <a href="https://instagram.com/Bunku.uae" target="_blank">@Bunku.uae</a> or WhatsApp 054 458 8113.</p>
+    </div>
+  </main>
+</body>
 </html>
