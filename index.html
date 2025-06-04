@@ -4,8 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Bunku Bread Order</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-sA+e2z7V9b3x6fF3v6lX0p6J9tM0H5m0E0b8w3v0CkM="
+    crossorigin=""
+  />
 </head>
 <body>
   <div class="gradient-bg"></div>
@@ -15,60 +22,92 @@
     <form class="order-form" id="orderForm" autocomplete="off">
       <div class="order-type-row">
         <label>
-          <input type="radio" name="orderType" value="pickup" checked>
+          <input type="radio" name="orderType" value="pickup" checked />
           Pick Up
         </label>
         <label>
-          <input type="radio" name="orderType" value="delivery">
+          <input type="radio" name="orderType" value="delivery" />
           Delivery (+35 AED)
         </label>
       </div>
       <label>
-        First Name<br>
-        <input type="text" name="firstName" required>
+        First Name<br />
+        <input type="text" name="firstName" required />
       </label>
       <label>
-        Last Name<br>
-        <input type="text" name="lastName" required>
+        Last Name<br />
+        <input type="text" name="lastName" required />
       </label>
       <div id="pickupFields">
         <label>
-          License Plate<br>
-          <input type="text" name="licensePlate" maxlength="15" placeholder="e.g. D 12345">
+          License Plate<br />
+          <input
+            type="text"
+            name="licensePlate"
+            maxlength="15"
+            placeholder="e.g. D 12345"
+          />
         </label>
       </div>
-      <div id="deliveryFields" style="display:none;">
+      <div id="deliveryFields" style="display: none;">
         <label>
-          City<br>
-          <input type="text" name="city" autocomplete="address-level2">
+          City<br />
+          <input type="text" name="city" autocomplete="address-level2" />
         </label>
         <label>
-          Location (Google Maps link)
-          <button type="button" class="maps-btn" onclick="window.open('https://maps.google.com', '_blank')" title="Open Google Maps in a new tab">📍</button>
-          <button type="button" class="gps-btn" onclick="fillCurrentLocation()" title="Use your current location">📡</button><br>
-          <input type="url" name="location" id="locationInput" placeholder="Paste your Google Maps link here" required>
+          Location (Pick on map)<br />
+          <button
+            type="button"
+            class="maps-btn"
+            id="openMapBtn"
+            title="Pick location on map"
+          >
+            📍
+          </button><br />
+          <input
+            type="text"
+            name="location"
+            id="locationInput"
+            placeholder="Pick your location on the map"
+            readonly
+            required
+          />
         </label>
         <label>
-          Street / Building Name<br>
-          <input type="text" name="street" autocomplete="address-line1">
+          Street / Building Name<br />
+          <input type="text" name="street" autocomplete="address-line1" />
         </label>
         <label>
-          Villa / Apartment No.<br>
-          <input type="text" name="villa" autocomplete="address-line2">
+          Villa / Apartment No.<br />
+          <input type="text" name="villa" autocomplete="address-line2" />
         </label>
       </div>
       <label>
-        Phone Number<br>
-        <input type="tel" name="phone" required pattern="[\d\s+()-]{6,}">
+        Phone Number<br />
+        <input type="tel" name="phone" required pattern="[\d\s+()-]{6,}" />
       </label>
       <label>
         Amount of Boxes
-        <span class="info-icon" title="Each box contains 4 pieces of bread.">ℹ️</span><br>
-        <input type="number" name="boxes" id="boxes" min="1" max="30" value="1" required>
+        <span class="info-icon" title="Each box contains 4 pieces of bread."
+          >ℹ️</span
+        ><br />
+        <input
+          type="number"
+          name="boxes"
+          id="boxes"
+          min="1"
+          max="30"
+          value="1"
+          required
+        />
       </label>
       <label>
-        Special Requests<br>
-        <textarea name="special" rows="2" placeholder="Anything else? Allergies, timing, etc."></textarea>
+        Special Requests<br />
+        <textarea
+          name="special"
+          rows="2"
+          placeholder="Anything else? Allergies, timing, etc."
+        ></textarea>
       </label>
       <div class="order-summary" id="orderSummary">
         Total: <span id="totalPrice">50</span> AED
@@ -76,10 +115,36 @@
       <button type="submit">Place Order</button>
     </form>
     <div class="order-info">
-      <p>After submitting, we’ll contact you to confirm your order and delivery details.</p>
-      <p>Questions? DM us on <a href="https://instagram.com/Bunku.uae" target="_blank">@Bunku.uae</a> or WhatsApp 054 458 8113.</p>
+      <p>
+        After submitting, we’ll contact you to confirm your order and delivery
+        details.
+      </p>
+      <p>
+        Questions? DM us on
+        <a href="https://instagram.com/Bunku.uae" target="_blank"
+          >@Bunku.uae</a
+        >
+        or WhatsApp 054 458 8113.
+      </p>
     </div>
   </main>
+
+  <!-- Modal for Leaflet Map Picker -->
+  <div id="mapModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mapModalTitle">
+    <div class="modal-content">
+      <button class="close" id="closeMapModal" aria-label="Close map picker">&times;</button>
+      <h3 id="mapModalTitle">Select your location</h3>
+      <div id="map" style="width: 100%; height: 350px; border-radius: 12px;"></div>
+      <button id="confirmLocation" class="confirm-btn">Confirm Location</button>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o8n6V4F5Z7XzvJ6W3n0dHk0eG0b7X4mjvX6cZfW0VfM="
+    crossorigin=""
+  ></script>
   <script src="script.js"></script>
 </body>
 </html>
