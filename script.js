@@ -107,11 +107,11 @@ function geocodeAndOpenMap() {
 // Open map at given coordinates (from locate me)
 function openMapWithCoords(coords) {
   mapModal.style.display = 'block';
-  confirmLocation.disabled = false;
+  confirmLocation.disabled = true;
   setTimeout(() => {
     destroyMap();
     let center = coords || [25.276987, 55.296249];
-    let zoom = 16;
+    let zoom = 17;
     showMap(center, zoom, true);
   }, 150);
 }
@@ -177,20 +177,48 @@ confirmLocation.addEventListener('click', () => {
 // --- "Locate Me" Button ---
 locateMeBtn.addEventListener('click', function(e) {
   e.preventDefault();
+  locateMeBtn.textContent = "Locating...";
+  mapModal.style.display = 'block';
+  confirmLocation.disabled = true;
+  setTimeout(() => {
+    destroyMap();
+    document.getElementById('map').innerHTML = '<div style="text-align:center;padding:100px 0;color:#a0522d;">Getting your location...</div>';
+  }, 50);
   if (!navigator.geolocation) {
     alert('Geolocation is not supported by your browser.');
+    locateMeBtn.textContent = "📍 Locate Me";
+    geocodeAndOpenMap();
     return;
   }
-  locateMeBtn.textContent = "Locating...";
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       locateMeBtn.textContent = "📍 Locate Me";
-      openMapWithCoords([pos.coords.latitude, pos.coords.longitude]);
+      setTimeout(() => {
+        destroyMap();
+        let center = [pos.coords.latitude, pos.coords.longitude];
+        let zoom = 17;
+        map = L.map('map').setView(center, zoom);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(map);
+        marker = L.marker(center, { draggable: true }).addTo(map);
+        confirmLocation.disabled = false;
+        locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
+        marker.on('dragend', function () {
+          const pos = marker.getLatLng();
+          locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
+        });
+        map.on('click', function (e) {
+          marker.setLatLng(e.latlng);
+          locationInput.value = `https://maps.google.com/?q=${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
+        });
+      }, 100);
     },
     function() {
-      alert('Unable to retrieve your location.');
       locateMeBtn.textContent = "📍 Locate Me";
-      geocodeAndOpenMap();
+      alert('Unable to retrieve your location.');
+      mapModal.style.display = 'none';
     }
   );
 });
