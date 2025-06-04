@@ -53,7 +53,8 @@
           <input type="text" name="villa" autocomplete="address-line2" />
         </label>
         <label>
-          Location (click to select on map)<br />
+          Location (click to select on map)
+          <button type="button" class="locate-btn" id="locateMeBtn" title="Use my current location">📍 Locate Me</button><br />
           <input type="text" name="location" id="locationInput" placeholder="Click to pick your location on the map" readonly required style="cursor:pointer; background:#fffbe9;" />
         </label>
       </div>
@@ -86,7 +87,7 @@
     <div class="modal-content">
       <button class="close" id="closeMapModal" aria-label="Close map picker">&times;</button>
       <h3 id="mapModalTitle">Select your location</h3>
-      <div class="map-instructions">Click on the map to select your location.</div>
+      <div class="map-instructions">Click on the map to select your location, or use "Locate Me" for best accuracy.</div>
       <div id="map"></div>
       <button id="confirmLocation" class="confirm-btn" disabled>Confirm Location</button>
     </div>
