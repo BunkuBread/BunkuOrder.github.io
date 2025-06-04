@@ -38,8 +38,24 @@
           License Plate<br />
           <input type="text" name="licensePlate" maxlength="15" placeholder="e.g. D 12345" />
         </label>
+        <div class="pickup-map-note">
+          <b>Pick Up Location:</b>
+          <div class="pickup-map-responsive">
+            <iframe src="https://www.google.com/maps/embed?pb=!4v1749073141887!6m8!1m7!1sgliNmXuCBP5nc9Mr1eToSw!2m2!1d25.36370213556116!2d55.42016081354442!3f311.7563987474596!4f-4.8047437432611275!5f0.7820865974627469"
+              width="100%" height="220" style="border:0;" allowfullscreen="" loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <div style="font-size:0.97em; color:#a0522d; margin-top:4px;">
+            This is where you can pick up your order.
+            <br><a href="https://goo.gl/maps/8Cw5E9QwqR5o5Z6T7" target="_blank" style="color:#ffb347;">Open in Google Maps</a>
+          </div>
+        </div>
       </div>
       <div id="deliveryFields" style="display: none;">
+        <div class="location-mobile-note">
+          <b>Note:</b> Location works best on <span style="color:#ffb347;">mobile</span>!<br>
+          If the marker isn't correct, drag it or tap the map to adjust.<br>
+        </div>
         <label>
           City<br />
           <input type="text" name="city" id="cityInput" autocomplete="address-level2" />
@@ -65,7 +81,9 @@
       <label style="position:relative;">
         Amount of Boxes
         <span class="info-icon" id="infoIcon" tabindex="0" role="button" aria-label="Each box contains 4 pieces of bread.">ℹ️</span><br />
-        <input type="number" name="boxes" id="boxes" min="1" max="30" value="1" required />
+        <select name="boxes" id="boxes" required>
+          <!-- JS will populate 1-30 -->
+        </select>
       </label>
       <label>
         Special Requests<br />
@@ -87,7 +105,13 @@
     <div class="modal-content">
       <button class="close" id="closeMapModal" aria-label="Close map picker">&times;</button>
       <h3 id="mapModalTitle">Select your location</h3>
-      <div class="map-instructions">Click on the map to select your location, or use "Locate Me" for best accuracy.</div>
+      <div class="map-instructions">
+        Click "Locate Me" to use your current location.<br>
+        If the marker isn't correct, drag it or click the map to adjust.<br>
+        <span style="color:#a0522d; font-size:0.95em;">
+          (Tip: On mobile, location is more accurate!)
+        </span>
+      </div>
       <div id="map"></div>
       <button id="confirmLocation" class="confirm-btn" disabled>Confirm Location</button>
     </div>
