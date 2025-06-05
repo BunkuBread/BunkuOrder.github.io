@@ -104,197 +104,10 @@ orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields
 updateFields();
 
 // --- MAP LOGIC ---
-function destroyMap() {
-  if (map) {
-    map.remove();
-    map = null;
-    marker = null;
-  }
-}
-
-function geocodeAndOpenMap() {
-  const city = cityInput.value.trim();
-  const street = streetInput.value.trim();
-  let query = '';
-  if (city && street) {
-    query = encodeURIComponent(`${street}, ${city}, UAE`);
-  } else if (city) {
-    query = encodeURIComponent(`${city}, UAE`);
-  }
-  mapModal.style.display = 'block';
-  confirmLocation.disabled = true;
-  setTimeout(() => {
-    destroyMap();
-    let center = [25.276987, 55.296249];
-    let zoom = 12;
-    if (query) {
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.length > 0) {
-            center = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-            zoom = 15;
-          }
-        })
-        .catch(() => {})
-        .finally(() => {
-          showMap(center, zoom, false);
-        });
-    } else {
-      showMap(center, zoom, false);
-    }
-  }, 150);
-}
-
-function openMapWithCoords(coords) {
-  mapModal.style.display = 'block';
-  confirmLocation.disabled = true;
-  setTimeout(() => {
-    destroyMap();
-    let center = coords || [25.276987, 55.296249];
-    let zoom = 17;
-    showMap(center, zoom, true);
-  }, 150);
-}
-
-function showMap(center, zoom, placeMarker=false) {
-  map = L.map('map').setView(center, zoom);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  }).addTo(map);
-
-  marker = null;
-  if (placeMarker) {
-    marker = L.marker(center, { draggable: true }).addTo(map);
-    confirmLocation.disabled = false;
-    locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
-    marker.on('dragend', function () {
-      const pos = marker.getLatLng();
-      locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
-    });
-  } else {
-    confirmLocation.disabled = true;
-  }
-  map.on('click', function (e) {
-    if (!marker) {
-      marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-      confirmLocation.disabled = false;
-      marker.on('dragend', function () {
-        const pos = marker.getLatLng();
-        locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
-      });
-    } else {
-      marker.setLatLng(e.latlng);
-    }
-    const pos = marker.getLatLng();
-    locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
-  });
-}
-
-locationInput.addEventListener('click', geocodeAndOpenMap);
-locationInput.addEventListener('focus', geocodeAndOpenMap);
-
-closeMapModal.addEventListener('click', () => {
-  mapModal.style.display = 'none';
-  destroyMap();
-});
-window.addEventListener('click', (e) => {
-  if (e.target === mapModal) {
-    mapModal.style.display = 'none';
-    destroyMap();
-  }
-});
-confirmLocation.addEventListener('click', () => {
-  if (!marker) return;
-  const pos = marker.getLatLng();
-  locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
-  mapModal.style.display = 'none';
-  destroyMap();
-});
-
-locateMeBtn.addEventListener('click', function(e) {
-  e.preventDefault();
-  locateMeBtn.textContent = "Locating...";
-  mapModal.style.display = 'block';
-  confirmLocation.disabled = true;
-  setTimeout(() => {
-    destroyMap();
-    document.getElementById('map').innerHTML = '<div style="text-align:center;padding:100px 0;color:#a0522d;">Getting your location...</div>';
-  }, 50);
-  if (!navigator.geolocation) {
-    alert('Geolocation is not supported by your browser.');
-    locateMeBtn.textContent = "📍 Locate Me";
-    geocodeAndOpenMap();
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      locateMeBtn.textContent = "📍 Locate Me";
-      setTimeout(() => {
-        destroyMap();
-        let center = [pos.coords.latitude, pos.coords.longitude];
-        let zoom = 17;
-        map = L.map('map').setView(center, zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
-        marker = L.marker(center, { draggable: true }).addTo(map);
-        confirmLocation.disabled = false;
-        locationInput.value = `https://maps.google.com/?q=${center[0].toFixed(6)},${center[1].toFixed(6)}`;
-        marker.on('dragend', function () {
-          const pos = marker.getLatLng();
-          locationInput.value = `https://maps.google.com/?q=${pos.lat.toFixed(6)},${pos.lng.toFixed(6)}`;
-        });
-        map.on('click', function (e) {
-          marker.setLatLng(e.latlng);
-          locationInput.value = `https://maps.google.com/?q=${e.latlng.lat.toFixed(6)},${e.latlng.lng.toFixed(6)}`;
-        });
-      }, 100);
-    },
-    function() {
-      locateMeBtn.textContent = "📍 Locate Me";
-      alert('Unable to retrieve your location.');
-      mapModal.style.display = 'none';
-    }
-  );
-});
+// (Omitted for brevity; keep your existing map code here)
 
 // --- INFO ICON TOOLTIP ---
-let infoTooltip;
-infoIcon.addEventListener('click', (e) => {
-  e.preventDefault();
-  if (infoTooltip) {
-    infoTooltip.remove();
-    infoTooltip = null;
-    return;
-  }
-  infoTooltip = document.createElement('div');
-  infoTooltip.className = 'info-tooltip';
-  infoTooltip.textContent = 'Each box contains 4 pieces of bread.';
-  document.body.appendChild(infoTooltip);
-  const rect = infoIcon.getBoundingClientRect();
-  infoTooltip.style.position = 'absolute';
-  infoTooltip.style.left = rect.left + window.scrollX + rect.width / 2 + 'px';
-  infoTooltip.style.top = rect.bottom + window.scrollY + 6 + 'px';
-  infoTooltip.style.display = 'block';
-});
-document.addEventListener('click', (e) => {
-  if (
-    infoTooltip &&
-    !infoIcon.contains(e.target) &&
-    !infoTooltip.contains(e.target)
-  ) {
-    infoTooltip.remove();
-    infoTooltip = null;
-  }
-});
-infoIcon.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
-    infoIcon.click();
-  }
-});
+// (Omitted for brevity; keep your existing tooltip code here)
 
 // --- FORM VALIDATION & SUPABASE SUBMIT ---
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
@@ -337,23 +150,29 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
 
   // Gather form data
   const formData = new FormData(this);
+  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  let boxesCount = Number(formData.get('boxes'));
+  let total = boxesCount * 50;
+  if (orderType === 'delivery') total += 35;
+
   const orderData = {
     first_name: formData.get('firstName'),
     last_name: formData.get('lastName'),
     phone: formData.get('phone'),
-    order_type: document.querySelector('input[name="orderType"]:checked').value,
-    boxes: Number(formData.get('boxes')),
+    order_type: orderType,
+    boxes: boxesCount,
     license_plate: formData.get('licensePlate'),
     city: formData.get('city'),
     street: formData.get('street'),
     villa: formData.get('villa'),
     location: formData.get('location'),
     special: formData.get('special'),
+    total: total // <-- total column!
   };
 
   // Send to Supabase
   const { data, error } = await supabase
-    .from('orders') // Make sure this matches your table name
+    .from('orders')
     .insert([orderData]);
 
   if (error) {
