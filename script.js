@@ -1,3 +1,9 @@
+// --- Supabase Setup ---
+const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- Existing Variables and Functions ---
 const orderTypeRadios = document.querySelectorAll('input[name="orderType"]');
 const pickupFields = document.getElementById('pickupFields');
 const deliveryFields = document.getElementById('deliveryFields');
@@ -290,8 +296,9 @@ infoIcon.addEventListener('keydown', (e) => {
   }
 });
 
-// --- FORM VALIDATION ---
-document.getElementById('orderForm').addEventListener('submit', function(e) {
+// --- FORM VALIDATION & SUPABASE SUBMIT ---
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
   let errors = [];
   // Phone validation: 05X XXX-XXXX (auto-format if possible)
   let phoneVal = phoneInput.value.trim();
@@ -324,11 +331,37 @@ document.getElementById('orderForm').addEventListener('submit', function(e) {
     }
   });
   if (errors.length > 0) {
-    e.preventDefault();
     alert(errors[0]);
     return false;
   }
-  // Success!
-  e.preventDefault();
-  alert('Order submitted! (Connect to your backend or Supabase to process.)');
+
+  // Gather form data
+  const formData = new FormData(this);
+  const orderData = {
+    first_name: formData.get('firstName'),
+    last_name: formData.get('lastName'),
+    phone: formData.get('phone'),
+    order_type: document.querySelector('input[name="orderType"]:checked').value,
+    boxes: Number(formData.get('boxes')),
+    license_plate: formData.get('licensePlate'),
+    city: formData.get('city'),
+    street: formData.get('street'),
+    villa: formData.get('villa'),
+    location: formData.get('location'),
+    special: formData.get('special'),
+  };
+
+  // Send to Supabase
+  const { data, error } = await supabase
+    .from('orders') // Make sure this matches your table name
+    .insert([orderData]);
+
+  if (error) {
+    alert('Sorry, there was an error placing your order. Please try again.');
+    console.error(error);
+    return false;
+  }
+
+  alert('Order submitted! We will contact you soon.');
+  this.reset();
 });
