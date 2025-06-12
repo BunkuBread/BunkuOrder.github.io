@@ -1,326 +1,296 @@
-body {
-  font-family: 'Poppins', Arial, sans-serif;
-  background: #fffbe9;
-  color: #4d3b2f;
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
+// --- Supabase Setup ---
+const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- DOM Elements ---
+const orderTypeRadios = document.querySelectorAll('input[name="orderType"]');
+const pickupFields = document.getElementById('pickupFields');
+const deliveryFields = document.getElementById('deliveryFields');
+const boxesInput = document.getElementById('boxesInput');
+const boxesSelect = document.getElementById('boxesSelect');
+const totalPriceSpan = document.getElementById('totalPrice');
+const orderSummaryDiv = document.getElementById('orderSummary');
+const mapModal = document.getElementById('mapModal');
+const closeMapModal = document.getElementById('closeMapModal');
+const confirmLocation = document.getElementById('confirmLocation');
+const locationInput = document.getElementById('locationInput');
+const infoIcon = document.getElementById('infoIcon');
+const cityInput = document.getElementById('cityInput');
+const streetInput = document.getElementById('streetInput');
+const locateMeBtn = document.getElementById('locateMeBtn');
+const phoneInput = document.getElementById('phoneInput');
+
+let deliveryFee = 35;
+let map, marker;
+
+// --- Phone Number Formatting and Validation ---
+function formatPhoneNumber(value) {
+  let digits = value.replace(/\D/g, '');
+  if (!digits.startsWith('05') || digits.length !== 10) {
+    return null;
+  }
+  return digits.slice(0,3) + ' ' + digits.slice(3,6) + '-' + digits.slice(6);
 }
 
-.gradient-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    120deg,
-    #ffe1b2 0%,
-    #ffb347 40%,
-    #fff3d1 80%,
-    #f7e7c4 100%
+phoneInput.addEventListener('blur', () => {
+  const formatted = formatPhoneNumber(phoneInput.value);
+  if (formatted) {
+    phoneInput.value = formatted;
+    phoneInput.classList.remove('input-error');
+  } else {
+    phoneInput.classList.add('input-error');
+  }
+});
+
+// --- Responsive Boxes Input ---
+function populateBoxesDropdown() {
+  boxesSelect.innerHTML = '';
+  for (let i = 1; i <= 30; i++) {
+    const option = document.createElement('option');
+    option.value = i;
+    option.textContent = `${i} box${i > 1 ? 'es' : ''}`;
+    boxesSelect.appendChild(option);
+  }
+}
+populateBoxesDropdown();
+
+boxesInput.addEventListener('input', () => {
+  boxesSelect.value = boxesInput.value;
+  updateTotal();
+});
+boxesSelect.addEventListener('change', () => {
+  boxesInput.value = boxesSelect.value;
+  updateTotal();
+});
+
+// --- FORM LOGIC ---
+function updateFields() {
+  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  if (orderType === 'pickup') {
+    pickupFields.style.display = 'block';
+    deliveryFields.style.display = 'none';
+    document.getElementsByName('city')[0].required = false;
+    document.getElementsByName('location')[0].required = false;
+    document.getElementsByName('street')[0].required = false;
+    document.getElementsByName('villa')[0].required = false;
+    document.getElementsByName('licensePlate')[0].required = true;
+  } else {
+    pickupFields.style.display = 'none';
+    deliveryFields.style.display = 'block';
+    document.getElementsByName('city')[0].required = true;
+    document.getElementsByName('location')[0].required = true;
+    document.getElementsByName('street')[0].required = true;
+    document.getElementsByName('villa')[0].required = true;
+    document.getElementsByName('licensePlate')[0].required = false;
+  }
+  updateTotal();
+}
+
+function updateTotal() {
+  let boxes = parseInt(boxesInput.value, 10) || 1;
+  if (boxes < 1) boxes = 1;
+  if (boxes > 30) boxes = 30;
+  boxesInput.value = boxes;
+  boxesSelect.value = boxes;
+  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  let total = boxes * 50;
+  if (orderType === 'delivery') total += deliveryFee;
+  totalPriceSpan.textContent = total;
+  orderSummaryDiv.innerHTML =
+    `Total: <span id="totalPrice">${total}</span> AED` +
+    (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
+}
+
+orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
+updateFields();
+
+// --- MAP LOGIC ---
+// Open map modal on input click
+locationInput.addEventListener('click', () => {
+  openMapModal();
+});
+
+function openMapModal() {
+  mapModal.style.display = 'block';
+  setTimeout(() => {
+    mapModal.setAttribute('aria-hidden', 'false');
+    let lat = 25.276987, lng = 55.296249;
+    if (locationInput.value) {
+      const parts = locationInput.value.split(',');
+      if (parts.length === 2) {
+        lat = parseFloat(parts[0]);
+        lng = parseFloat(parts[1]);
+      }
+    }
+    initMap(lat, lng);
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+  }, 10);
+}
+
+function closeMapModalFn() {
+  mapModal.style.display = 'none';
+  mapModal.setAttribute('aria-hidden', 'true');
+  if (map) map.remove();
+}
+closeMapModal.addEventListener('click', closeMapModalFn);
+
+window.addEventListener('click', function(e) {
+  if (e.target === mapModal) {
+    closeMapModalFn();
+  }
+});
+
+function initMap(lat = 25.276987, lng = 55.296249) {
+  if (map) map.remove();
+  map = L.map('map').setView([lat, lng], 15);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+  locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  confirmLocation.disabled = false;
+
+  marker.on('dragend', function(e) {
+    const newPos = marker.getLatLng();
+    locationInput.value = `${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`;
+    confirmLocation.disabled = false;
+  });
+
+  map.on('click', function(e) {
+    marker.setLatLng(e.latlng);
+    locationInput.value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+    confirmLocation.disabled = false;
+  });
+
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+confirmLocation.addEventListener('click', () => {
+  closeMapModalFn();
+});
+
+// "Locate Me" button
+locateMeBtn.addEventListener('click', function() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      openMapModal();
+      setTimeout(() => {
+        initMap(position.coords.latitude, position.coords.longitude);
+        locationInput.value = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+      }, 100);
+    },
+    (error) => {
+      alert("Unable to get your location. Using default.");
+      openMapModal();
+    }
   );
-  background-size: 250% 250%;
-  animation: gradientMove 14s ease-in-out infinite;
-  opacity: 1;
-}
-@keyframes gradientMove {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
+});
 
-.order-main {
-  max-width: 430px;
-  margin: 48px auto;
-  background: #fff;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
-  padding: 32px 20px 24px 20px;
-  position: relative;
-  z-index: 1;
-}
-.return-btn {
-  display: inline-block;
-  margin: 0 auto 18px auto;
-  padding: 8px 20px;
-  background: #fffbe9;
-  color: #a0522d;
-  border: 1.5px solid #ffd699;
-  border-radius: 22px;
-  font-size: 1.04em;
-  font-weight: 600;
-  text-align: center;
-  text-decoration: none;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
-  transition: background 0.18s, color 0.18s, border 0.18s;
-}
-.return-btn:hover,
-.return-btn:focus {
-  background: #ffb347;
-  color: #fff;
-  border-color: #ffb347;
-  outline: none;
-}
-.logo-img {
-  display: block;
-  max-width: 120px;
-  width: 50%;
-  margin: 0 auto 16px auto;
-  border-radius: 12px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-}
-h1 {
-  text-align: center;
-  color: #a0522d;
-  margin-top: 0;
-}
-.subtitle {
-  text-align: center;
-  color: #a0522d;
-  margin-bottom: 24px;
-  font-size: 1.1rem;
-}
-.order-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-.order-type-row {
-  display: flex;
-  gap: 18px;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-.order-form label {
-  font-weight: 500;
-  margin-bottom: 6px;
-}
-.order-form input,
-.order-form select,
-.order-form textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ffd699;
-  border-radius: 7px;
-  font-size: 1rem;
-  margin-top: 6px;
-  background: #fffbe9;
-  color: #4d3b2f;
-  box-sizing: border-box;
-}
-.order-form input[type='radio'] {
-  width: auto;
-  margin-right: 6px;
-  accent-color: #ffb347;
-}
-.order-form button[type='submit'] {
-  margin-top: 18px;
-  padding: 14px;
-  background: #ffb347;
-  color: #fff;
-  font-weight: bold;
-  font-size: 1.1rem;
-  border: none;
-  border-radius: 24px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.order-form button[type='submit']:hover {
-  background: #ffa500;
-}
-.info-icon {
-  font-size: 1em;
-  margin-left: 4px;
-  color: #ffb347;
-  cursor: pointer;
-  vertical-align: middle;
-}
-.locate-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.1em;
-  margin-left: 4px;
-  color: #ffb347;
-  vertical-align: middle;
-  padding: 0 2px;
-}
-.locate-btn:active { color: #ffa500; }
-.order-summary {
-  background: #fffbe9;
-  border: 1px dashed #ffb347;
-  border-radius: 8px;
-  padding: 12px;
-  margin: 12px 0 0 0;
-  font-weight: 600;
-  color: #a0522d;
-  text-align: center;
-}
-.fee-note {
-  font-size: 0.97em;
-  color: #a0522d;
-  opacity: 0.8;
-}
-.order-info {
-  margin-top: 32px;
-  text-align: center;
-  font-size: 0.97rem;
-  color: #a0522d;
-}
+// --- INFO ICON TOOLTIP ---
+const tooltip = document.createElement('div');
+tooltip.className = 'info-tooltip';
+tooltip.textContent = 'Each box contains 4 pieces of bread.';
 
-.pickup-map-note {
-  margin: 16px 0 0 0;
-}
-.pickup-map-responsive {
-  position: relative;
-  width: 100%;
-  padding-bottom: 56%;
-  height: 0;
-  overflow: hidden;
-  border-radius: 12px;
-  margin: 8px 0;
-}
-.pickup-map-responsive iframe {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  border: 0;
-  border-radius: 12px;
-}
-.location-mobile-note {
-  font-size: 0.98em;
-  color: #a0522d;
-  background: #fffbe9;
-  border-radius: 8px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-}
+infoIcon.addEventListener('mouseenter', () => {
+  const rect = infoIcon.getBoundingClientRect();
+  tooltip.style.left = `${rect.left + window.scrollX}px`;
+  tooltip.style.top = `${rect.bottom + window.scrollY + 6}px`;
+  tooltip.style.display = 'block';
+  document.body.appendChild(tooltip);
+});
+infoIcon.addEventListener('mouseleave', () => {
+  tooltip.style.display = 'none';
+  if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
+});
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 100;
-  left: 0;
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
-  background: rgba(0,0,0,0.36);
-}
-.modal-content {
-  background: #fff;
-  margin: 60px auto;
-  padding: 24px 18px 18px 18px;
-  border-radius: 16px;
-  max-width: 400px;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-  position: relative;
-}
-.close {
-  color: #a0522d;
-  position: absolute;
-  top: 12px;
-  right: 18px;
-  font-size: 1.4em;
-  font-weight: bold;
-  cursor: pointer;
-  transition: color 0.2s;
-  background: none;
-  border: none;
-}
-.close:hover { color: #ffb347; }
-.confirm-btn {
-  margin-top: 16px;
-  padding: 10px 28px;
-  background: #ffb347;
-  color: #fff;
-  border: none;
-  border-radius: 18px;
-  font-size: 1.1em;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.confirm-btn:disabled {
-  background: #ffd699;
-  color: #fff;
-  cursor: not-allowed;
-}
-.confirm-btn:hover:not(:disabled) { background: #ffa500; }
-.map-instructions {
-  font-size: 1em;
-  color: #a0522d;
-  margin-bottom: 8px;
-  text-align: center;
-}
-#map {
-  width: 100%;
-  height: 350px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-}
-
-.phone-hint {
-  font-size: 0.97em;
-  color: #a0522d;
-  margin-left: 4px;
-}
-.input-error {
-  border: 1.5px solid #e74c3c !important;
-  background: #fff0f0 !important;
-}
-
-/* Hide desktop number input on mobile, show select instead */
-@media (max-width: 700px), (pointer: coarse) {
-  .boxes-desktop { display: none !important; }
-  .boxes-mobile { display: block !important; }
-}
-@media (min-width: 701px) {
-  .boxes-desktop { display: block !important; }
-  .boxes-mobile { display: none !important; }
-}
-
-.info-tooltip {
-  position: absolute;
-  background: #fffbe9;
-  color: #a0522d;
-  border: 1.5px solid #ffd699;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 0.98em;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.09);
-  z-index: 999;
-  left: 50%;
-  transform: translateX(-50%);
-  top: 100%;
-  margin-top: 6px;
-  white-space: nowrap;
-  display: none;
-}
-
-@media (max-width: 700px) {
-  .order-main {
-    padding: 10px 2vw;
-    margin: 16px auto;
+// --- FORM VALIDATION & SUPABASE SUBMIT ---
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  let errors = [];
+  
+  // Phone validation
+  let phoneVal = phoneInput.value.trim();
+  let formatted = formatPhoneNumber(phoneVal);
+  if (!formatted) {
+    errors.push('Phone number must start with 05 and be 10 digits, e.g. 056 399-6650');
+    phoneInput.classList.add('input-error');
+  } else {
+    phoneInput.value = formatted;
+    phoneInput.classList.remove('input-error');
   }
-  .modal-content {
-    max-width: 98vw;
-    padding: 14px 2vw 10px 2vw;
+
+  // Boxes validation
+  let boxes = parseInt(boxesInput.value, 10);
+  if (isNaN(boxes) || boxes < 1 || boxes > 30) {
+    errors.push('Please select a valid number of boxes.');
+    boxesInput.classList.add('input-error');
+    boxesSelect.classList.add('input-error');
+  } else {
+    boxesInput.classList.remove('input-error');
+    boxesSelect.classList.remove('input-error');
   }
-  #map {
-    height: 180px;
+
+  // Required fields
+  const requiredFields = document.querySelectorAll('#orderForm [required]');
+  requiredFields.forEach(field => {
+    if (!field.value.trim()) {
+      errors.push('Please fill all required fields.');
+      field.classList.add('input-error');
+    } else {
+      field.classList.remove('input-error');
+    }
+  });
+
+  if (errors.length > 0) {
+    alert(errors[0]);
+    return false;
   }
-  .pickup-map-responsive {
-    padding-bottom: 60%;
+
+  // Gather form data
+  const formData = new FormData(this);
+  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  let boxesCount = Number(formData.get('boxes'));
+  let total = boxesCount * 50;
+  if (orderType === 'delivery') total += 35;
+
+  const orderData = {
+    first_name: formData.get('firstName'),
+    last_name: formData.get('lastName'),
+    phone: formData.get('phone'),
+    order_type: orderType,
+    boxes: boxesCount,
+    license_plate: formData.get('licensePlate'),
+    city: formData.get('city'),
+    street: formData.get('street'),
+    villa: formData.get('villa'),
+    location: formData.get('location'),
+    special: formData.get('special'),
+    total: total
+  };
+
+  // Send to Supabase
+  const { data, error } = await supabase
+    .from('orders')
+    .insert([orderData]);
+
+  if (error) {
+    alert('Sorry, there was an error placing your order. Please try again.');
+    console.error(error);
+    return false;
   }
-  .logo-img {
-    max-width: 90px;
-    width: 70%;
-    margin-bottom: 12px;
-  }
-}
+
+  alert('Order submitted! We will contact you soon.');
+  this.reset();
+});
