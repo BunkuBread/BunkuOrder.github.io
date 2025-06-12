@@ -1,6 +1,6 @@
 // --- Supabase Setup ---
 const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"; // <-- Replace with your real key
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- DOM Elements ---
@@ -106,7 +106,6 @@ orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields
 updateFields();
 
 // --- MAP LOGIC ---
-// Open map modal on input click
 locationInput.addEventListener('click', () => {
   openMapModal();
 });
@@ -176,7 +175,6 @@ confirmLocation.addEventListener('click', () => {
   closeMapModalFn();
 });
 
-// "Locate Me" button
 locateMeBtn.addEventListener('click', function() {
   if (!navigator.geolocation) {
     alert("Geolocation is not supported by your browser");
@@ -265,7 +263,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   let total = boxesCount * 50;
   if (orderType === 'delivery') total += 35;
 
-  // Map form fields to Supabase columns
   const orderData = {
     first_name: formData.get('firstName'),
     last_name: formData.get('lastName'),
@@ -281,7 +278,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     total: total
   };
 
-  // Send to Supabase
   const { data, error } = await supabase
     .from('orders')
     .insert([orderData]);
