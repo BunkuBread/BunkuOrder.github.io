@@ -86,6 +86,7 @@ function updateFields() {
   }
   updateTotal();
 }
+
 function updateTotal() {
   let boxes = parseInt(boxesInput.value, 10) || 1;
   if (boxes < 1) boxes = 1;
@@ -100,20 +101,81 @@ function updateTotal() {
     `Total: <span id="totalPrice">${total}</span> AED` +
     (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
 }
+
 orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
 updateFields();
 
 // --- MAP LOGIC ---
-// (Omitted for brevity; keep your existing map code here)
+function initMap(lat = 25.276987, lng = 55.296249) {
+  if (map) map.remove();
+  map = L.map('map').setView([lat, lng], 15);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  if (marker) map.removeLayer(marker);
+  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+  
+  marker.on('dragend', function(e) {
+    const newPos = marker.getLatLng();
+    locationInput.value = `${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`;
+  });
+}
+
+locateMeBtn.addEventListener('click', function() {
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      initMap(position.coords.latitude, position.coords.longitude);
+      locationInput.value = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
+    },
+    (error) => {
+      alert("Unable to get your location. Using default.");
+      initMap();
+    }
+  );
+});
+
+mapModal.addEventListener('shown.bs.modal', () => {
+  if (!map) initMap();
+});
+
+closeMapModal.addEventListener('click', () => {
+  if (map) map.remove();
+});
+
+confirmLocation.addEventListener('click', () => {
+  const bsModal = bootstrap.Modal.getInstance(mapModal);
+  bsModal.hide();
+});
 
 // --- INFO ICON TOOLTIP ---
-// (Omitted for brevity; keep your existing tooltip code here)
+const tooltip = document.createElement('div');
+tooltip.className = 'tooltip';
+tooltip.textContent = 'We need your location to ensure accurate delivery. Your data is secure and only used for this order.';
+
+infoIcon.addEventListener('mouseenter', () => {
+  const rect = infoIcon.getBoundingClientRect();
+  tooltip.style.left = `${rect.left + window.scrollX}px`;
+  tooltip.style.top = `${rect.top + window.scrollY - 30}px`;
+  document.body.appendChild(tooltip);
+});
+
+infoIcon.addEventListener('mouseleave', () => {
+  document.body.removeChild(tooltip);
+});
 
 // --- FORM VALIDATION & SUPABASE SUBMIT ---
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   let errors = [];
-  // Phone validation: 05X XXX-XXXX (auto-format if possible)
+  
+  // Phone validation
   let phoneVal = phoneInput.value.trim();
   let formatted = formatPhoneNumber(phoneVal);
   if (!formatted) {
@@ -123,6 +185,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     phoneInput.value = formatted;
     phoneInput.classList.remove('input-error');
   }
+
   // Boxes validation
   let boxes = parseInt(boxesInput.value, 10);
   if (isNaN(boxes) || boxes < 1 || boxes > 30) {
@@ -133,6 +196,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     boxesInput.classList.remove('input-error');
     boxesSelect.classList.remove('input-error');
   }
+
   // Required fields
   const requiredFields = document.querySelectorAll('#orderForm [required]');
   requiredFields.forEach(field => {
@@ -143,6 +207,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
       field.classList.remove('input-error');
     }
   });
+
   if (errors.length > 0) {
     alert(errors[0]);
     return false;
@@ -167,7 +232,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     villa: formData.get('villa'),
     location: formData.get('location'),
     special: formData.get('special'),
-    total: total // <-- total column!
+    total: total
   };
 
   // Send to Supabase
