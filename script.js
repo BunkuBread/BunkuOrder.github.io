@@ -1,6 +1,6 @@
 // --- Supabase Setup ---
 const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- DOM Elements ---
@@ -258,13 +258,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  // Gather form data
+  // Gather form data and map to Supabase column names
   const formData = new FormData(this);
   const orderType = document.querySelector('input[name="orderType"]:checked').value;
   let boxesCount = Number(formData.get('boxes'));
   let total = boxesCount * 50;
   if (orderType === 'delivery') total += 35;
 
+  // Map form fields to Supabase columns
   const orderData = {
     first_name: formData.get('firstName'),
     last_name: formData.get('lastName'),
