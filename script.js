@@ -185,7 +185,10 @@ confirmLocation.addEventListener('click', () => {
   closeMapModalFn();
 });
 
+// --- FIXED: "Locate Me" always opens modal, then centers map if geolocation succeeds ---
 locateMeBtn.addEventListener('click', function() {
+  openMapModal();
+
   if (!navigator.geolocation) {
     alert("Geolocation is not supported by your browser");
     return;
@@ -193,15 +196,19 @@ locateMeBtn.addEventListener('click', function() {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      openMapModal();
       setTimeout(() => {
-        initMap(position.coords.latitude, position.coords.longitude);
-        locationInput.value = `${position.coords.latitude.toFixed(6)}, ${position.coords.longitude.toFixed(6)}`;
-      }, 100);
+        if (map && marker) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          map.setView([lat, lng], 15);
+          marker.setLatLng([lat, lng]);
+          locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          confirmLocation.disabled = false;
+        }
+      }, 200); // Wait for map to finish initializing
     },
     (error) => {
       alert("Unable to get your location. Using default.");
-      openMapModal();
     }
   );
 });
