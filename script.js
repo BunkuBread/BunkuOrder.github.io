@@ -1,6 +1,6 @@
 // --- Supabase Setup ---
 const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI"; // <-- Replace with your real key
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- DOM Elements ---
@@ -22,7 +22,8 @@ const locateMeBtn = document.getElementById('locateMeBtn');
 const phoneInput = document.getElementById('phoneInput');
 
 let deliveryFee = 35;
-let map, marker;
+let map = null;
+let marker = null;
 
 // --- Phone Number Formatting and Validation ---
 function formatPhoneNumber(value) {
@@ -106,6 +107,7 @@ orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields
 updateFields();
 
 // --- MAP LOGIC ---
+
 locationInput.addEventListener('click', () => {
   openMapModal();
 });
@@ -114,6 +116,8 @@ function openMapModal() {
   mapModal.style.display = 'block';
   setTimeout(() => {
     mapModal.setAttribute('aria-hidden', 'false');
+    // Always clear the map container before initializing
+    document.getElementById('map').innerHTML = '';
     let lat = 25.276987, lng = 55.296249;
     if (locationInput.value) {
       const parts = locationInput.value.split(',');
@@ -124,7 +128,7 @@ function openMapModal() {
     }
     initMap(lat, lng);
     setTimeout(() => {
-      map.invalidateSize();
+      if (map) map.invalidateSize();
     }, 100);
   }, 10);
 }
@@ -132,7 +136,13 @@ function openMapModal() {
 function closeMapModalFn() {
   mapModal.style.display = 'none';
   mapModal.setAttribute('aria-hidden', 'true');
-  if (map) map.remove();
+  if (map) {
+    map.remove();
+    map = null;
+    marker = null;
+  }
+  // Clear the map container to allow re-initialization
+  document.getElementById('map').innerHTML = '';
 }
 closeMapModal.addEventListener('click', closeMapModalFn);
 
@@ -143,14 +153,14 @@ window.addEventListener('click', function(e) {
 });
 
 function initMap(lat = 25.276987, lng = 55.296249) {
-  if (map) map.remove();
+  // Defensive: clear map container before every init
+  document.getElementById('map').innerHTML = '';
   map = L.map('map').setView([lat, lng], 15);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  if (marker) map.removeLayer(marker);
   marker = L.marker([lat, lng], {draggable: true}).addTo(map);
 
   locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
