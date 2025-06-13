@@ -185,7 +185,7 @@ confirmLocation.addEventListener('click', () => {
   closeMapModalFn();
 });
 
-// --- FIXED: "Locate Me" always opens modal, then centers map if geolocation succeeds ---
+// --- "Locate Me" always opens modal, then centers map if geolocation succeeds ---
 locateMeBtn.addEventListener('click', function() {
   openMapModal();
 
@@ -230,7 +230,7 @@ infoIcon.addEventListener('mouseleave', () => {
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
 });
 
-// --- FORM VALIDATION & SUPABASE SUBMIT ---
+// --- FORM VALIDATION & SUPABASE SUBMIT + ACTIVEPIECES WEBHOOK ---
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   let errors = [];
@@ -295,6 +295,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     total: total
   };
 
+  // Insert into Supabase
   const { data, error } = await supabase
     .from('orders')
     .insert([orderData]);
@@ -304,6 +305,13 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     console.error(error);
     return false;
   }
+
+  // Send order to Activepieces webhook
+  fetch('https://cloud.activepieces.com/api/v1/webhooks/xgfV2PId0kguctkoS27l2', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(orderData)
+  });
 
   alert('Order submitted! We will contact you soon.');
   this.reset();
