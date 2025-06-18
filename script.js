@@ -20,6 +20,7 @@ const cityInput = document.getElementById('cityInput');
 const streetInput = document.getElementById('streetInput');
 const locateMeBtn = document.getElementById('locateMeBtn');
 const phoneInput = document.getElementById('phoneInput');
+const orderDateInput = document.getElementById('orderDate'); // <-- NEW
 
 let deliveryFee = 35;
 let map = null;
@@ -268,6 +269,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     }
   });
 
+  // Date validation
+  if (!orderDateInput.value) {
+    errors.push('Please select a date for your bread.');
+    orderDateInput.classList.add('input-error');
+  } else {
+    orderDateInput.classList.remove('input-error');
+  }
+
   if (errors.length > 0) {
     alert(errors[0]);
     return false;
@@ -292,7 +301,8 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     villa: formData.get('villa'),
     location: formData.get('location'),
     special: formData.get('special'),
-    total: total
+    total: total,
+    date: formData.get('orderDate') // <-- NEW FIELD
   };
 
   // Insert into Supabase
