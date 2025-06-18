@@ -4,21 +4,9 @@
   <meta charset="UTF-8">
   <title>Bunku Bread Order Form</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Leaflet CSS for map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    /* Minimal styling for clarity */
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    label { display: block; margin-top: 1em; }
-    input, select, button { margin-top: 0.5em; padding: 0.5em; width: 100%; max-width: 400px; }
-    .input-error { border: 2px solid red; }
-    .fee-note { color: #888; font-size: 0.9em; }
-    #orderSummary { margin-top: 1em; }
-    .info-tooltip { position: absolute; background: #222; color: #fff; padding: 8px 12px; border-radius: 4px; z-index: 10; display: none; }
-    #mapModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); }
-    #mapModalContent { background: #fff; margin: 5% auto; padding: 1em; border-radius: 8px; width: 90vw; max-width: 600px; position: relative; }
-    #map { width: 100%; height: 300px; }
-    #closeMapModal { position: absolute; top: 8px; right: 12px; cursor: pointer; font-size: 1.2em; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
@@ -31,7 +19,7 @@
     <label for="lastName">Last Name:</label>
     <input type="text" id="lastName" name="lastName" required />
 
-    <label for="phone">Phone Number:</label>
+    <label for="phoneInput">Phone Number:</label>
     <input type="tel" id="phoneInput" name="phone" placeholder="05X XXX-XXXX" required />
 
     <label>Order Type:</label>
@@ -57,7 +45,7 @@
 
       <label for="locationInput">Map Location:</label>
       <input type="text" id="locationInput" name="location" readonly placeholder="Click to select on map" />
-      <button type="button" id="locateMeBtn">Locate Me</button>
+      <button type="button" id="locateMeBtn" type="button">Locate Me</button>
     </div>
 
     <label for="boxesInput">
@@ -70,11 +58,12 @@
     <label for="special">Special Instructions:</label>
     <input type="text" id="special" name="special" placeholder="Anything else we should know?" />
 
-    <!-- Date Picker -->
     <label for="orderDate"><b>Date you want your bread:</b></label>
     <input type="date" id="orderDate" name="orderDate" required />
 
-    <div id="orderSummary"></div>
+    <div id="orderSummary">
+      Total: <span id="totalPrice"></span> AED
+    </div>
 
     <button type="submit">Submit Order</button>
   </form>
