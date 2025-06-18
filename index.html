@@ -1,123 +1,100 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bunku Bread Order</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <meta charset="UTF-8">
+  <title>Bunku Bread Order Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Leaflet CSS for map (if you use the map modal) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    /* Minimal styling for clarity */
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    label { display: block; margin-top: 1em; }
+    input, select, button { margin-top: 0.5em; padding: 0.5em; width: 100%; max-width: 400px; }
+    .input-error { border: 2px solid red; }
+    .fee-note { color: #888; font-size: 0.9em; }
+    #orderSummary { margin-top: 1em; }
+    .info-tooltip { position: absolute; background: #222; color: #fff; padding: 8px 12px; border-radius: 4px; z-index: 10; display: none; }
+    #mapModal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); }
+    #mapModalContent { background: #fff; margin: 5% auto; padding: 1em; border-radius: 8px; width: 90vw; max-width: 600px; position: relative; }
+    #map { width: 100%; height: 300px; }
+    #closeMapModal { position: absolute; top: 8px; right: 12px; cursor: pointer; font-size: 1.2em; }
+  </style>
 </head>
 <body>
-  <div class="gradient-bg"></div>
-  <main class="order-main">
-    <a href="https://bunkubread.github.io/Bunku.github.io/" target="_blank" class="return-btn">
-      ← Return to Main Website
-    </a>
-    <img src="images/BunkuBreadLogo.jpg" alt="Bunku Bread Logo" class="logo-img" />
-    <h1>Order Bunku Bread</h1>
-    <p class="subtitle">Freshly baked, home-based, and delivered with love in the UAE.</p>
-    <form class="order-form" id="orderForm" autocomplete="off" novalidate>
-      <div class="order-type-row">
-        <label>
-          <input type="radio" name="orderType" value="pickup" checked />
-          Pick Up
-        </label>
-        <label>
-          <input type="radio" name="orderType" value="delivery" />
-          Delivery (+35 AED)
-        </label>
-      </div>
-      <label>
-        First Name<br />
-        <input type="text" name="firstName" required />
-      </label>
-      <label>
-        Last Name<br />
-        <input type="text" name="lastName" required />
-      </label>
-      <div id="pickupFields">
-        <label>
-          License Plate<br />
-          <input type="text" name="licensePlate" maxlength="15" placeholder="e.g. D 12345" />
-        </label>
-        <div class="pickup-map-note">
-          <b>Pick Up Location:</b>
-          <div class="pickup-map-responsive">
-            <iframe src="https://www.google.com/maps/embed?pb=!4v1749073141887!6m8!1m7!1sgliNmXuCBP5nc9Mr1eToSw!2m2!1d25.36370213556116!2d55.42016081354442!3f311.7563987474596!4f-4.8047437432611275!5f0.7820865974627469"
-              width="100%" height="220" style="border:0;" allowfullscreen="" loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-          <div style="font-size:0.97em; color:#a0522d; margin-top:4px;">
-            This is where you can pick up your order.
-          </div>
-        </div>
-      </div>
-      <div id="deliveryFields" style="display: none;">
-        <div class="location-mobile-note">
-          <b>Note:</b> Location works best on <span style="color:#ffb347;">mobile</span>!<br>
-          If the marker isn't correct, drag it or tap the map to adjust.<br>
-        </div>
-        <label>
-          City<br />
-          <input type="text" name="city" id="cityInput" autocomplete="address-level2" required />
-        </label>
-        <label>
-          Street / Building Name<br />
-          <input type="text" name="street" id="streetInput" autocomplete="address-line1" required />
-        </label>
-        <label>
-          Villa / Apartment No.<br />
-          <input type="text" name="villa" autocomplete="address-line2" required />
-        </label>
-        <label>
-          Location (click to select on map)
-          <button type="button" class="locate-btn" id="locateMeBtn" title="Use my current location">📍 Locate Me</button><br />
-          <input type="text" name="location" id="locationInput" placeholder="Click to pick your location on the map" readonly required style="cursor:pointer; background:#fffbe9;" />
-        </label>
-      </div>
-      <label>
-        Phone Number<br />
-        <input type="text" name="phone" id="phoneInput" maxlength="13" placeholder="05X 123-4567" required autocomplete="tel" />
-        <span class="phone-hint">Format: 05X 123-4567</span>
-      </label>
-      <label style="position:relative;">
-        Amount of Boxes
-        <span class="info-icon" id="infoIcon" tabindex="0" role="button" aria-label="Each box contains 4 pieces of bread.">ℹ️</span><br />
-        <input type="number" name="boxes" id="boxesInput" min="1" max="30" value="1" required class="boxes-desktop" />
-        <select name="boxes" id="boxesSelect" class="boxes-mobile" style="display:none;"></select>
-      </label>
-      <label>
-        Special Requests<br />
-        <textarea name="special" rows="2" placeholder="Anything else? Allergies, timing, etc."></textarea>
-      </label>
-      <div class="order-summary" id="orderSummary">
-        Total: <span id="totalPrice">50</span> AED
-      </div>
-      <button type="submit">Place Order</button>
-    </form>
-    <div class="order-info">
-      <p>After submitting, we’ll contact you to confirm your order and delivery details.</p>
-      <p>Questions? DM us on <a href="https://instagram.com/Bunku.uae" target="_blank">@Bunku.uae</a> or WhatsApp 054 458 8113.</p>
+
+  <h1>Bunku Bread Order Form</h1>
+
+  <form id="orderForm" autocomplete="off">
+    <label for="firstName">First Name:</label>
+    <input type="text" id="firstName" name="firstName" required />
+
+    <label for="lastName">Last Name:</label>
+    <input type="text" id="lastName" name="lastName" required />
+
+    <label for="phone">Phone Number:</label>
+    <input type="tel" id="phoneInput" name="phone" placeholder="05X XXX-XXXX" required />
+
+    <label>Order Type:</label>
+    <label><input type="radio" name="orderType" value="pickup" checked /> Pickup</label>
+    <label><input type="radio" name="orderType" value="delivery" /> Delivery</label>
+
+    <!-- Pickup-only fields -->
+    <div id="pickupFields">
+      <label for="licensePlate">Car License Plate (for pickup):</label>
+      <input type="text" id="licensePlate" name="licensePlate" />
     </div>
-  </main>
-  <div id="mapModal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mapModalTitle">
-    <div class="modal-content">
-      <button class="close" id="closeMapModal" aria-label="Close map picker">&times;</button>
-      <h3 id="mapModalTitle">Select your location</h3>
-      <div class="map-instructions">
-        Click "Locate Me" to use your current location.<br>
-        If the marker isn't correct, drag it or click the map to adjust.<br>
-        <span style="color:#a0522d; font-size:0.95em;">
-          (Tip: On mobile, location is more accurate!)
-        </span>
-      </div>
+
+    <!-- Delivery-only fields -->
+    <div id="deliveryFields" style="display:none;">
+      <label for="cityInput">City:</label>
+      <input type="text" id="cityInput" name="city" />
+
+      <label for="streetInput">Street:</label>
+      <input type="text" id="streetInput" name="street" />
+
+      <label for="villa">Villa/Apartment:</label>
+      <input type="text" id="villa" name="villa" />
+
+      <label for="locationInput">Map Location:</label>
+      <input type="text" id="locationInput" name="location" readonly placeholder="Click to select on map" />
+      <button type="button" id="locateMeBtn">Locate Me</button>
+    </div>
+
+    <label for="boxesInput">
+      Number of Boxes:
+      <span id="infoIcon" style="cursor:help;" title="Each box contains 4 pieces of bread.">ℹ️</span>
+    </label>
+    <input type="number" id="boxesInput" name="boxes" min="1" max="30" value="1" required />
+    <select id="boxesSelect" style="margin-top:0.5em;"></select>
+
+    <label for="special">Special Instructions:</label>
+    <input type="text" id="special" name="special" placeholder="Anything else we should know?" />
+
+    <!-- Date Picker -->
+    <label for="orderDate"><b>Date you want your bread:</b></label>
+    <input type="date" id="orderDate" name="orderDate" required />
+
+    <div id="orderSummary"></div>
+
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <!-- Map Modal -->
+  <div id="mapModal" aria-hidden="true">
+    <div id="mapModalContent">
+      <span id="closeMapModal" title="Close">&times;</span>
+      <h3>Select Your Location</h3>
       <div id="map"></div>
-      <button id="confirmLocation" class="confirm-btn" disabled>Confirm Location</button>
+      <button type="button" id="confirmLocation">Confirm Location</button>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <!-- Leaflet JS (for map) -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <!-- Your main JS -->
   <script src="script.js"></script>
 </body>
 </html>
