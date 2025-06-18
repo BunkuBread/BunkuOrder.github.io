@@ -2,85 +2,105 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bunku Bread Order Form</title>
+  <title>Bunku Bread Order</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Leaflet CSS for map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Your Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Animated Gradient Background -->
+  <div class="gradient-bg"></div>
 
-  <h1>Bunku Bread Order Form</h1>
+  <div class="order-main">
+    <img src="bunku-logo.png" alt="Bunku Bread Logo" class="logo-img" />
+    <h1 class="logo-text">Bunku Bread</h1>
+    <div class="subtitle">Freshly baked. Delivered with love.</div>
+    <form id="orderForm" class="order-form" autocomplete="off">
+      <label for="firstName">First Name:</label>
+      <input type="text" id="firstName" name="firstName" required />
 
-  <form id="orderForm" autocomplete="off">
-    <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" name="firstName" required />
+      <label for="lastName">Last Name:</label>
+      <input type="text" id="lastName" name="lastName" required />
 
-    <label for="lastName">Last Name:</label>
-    <input type="text" id="lastName" name="lastName" required />
+      <label for="phoneInput">Phone Number: <span class="phone-hint">(05X XXX-XXXX)</span></label>
+      <input type="tel" id="phoneInput" name="phone" required />
 
-    <label for="phoneInput">Phone Number:</label>
-    <input type="tel" id="phoneInput" name="phone" placeholder="05X XXX-XXXX" required />
+      <label>Order Type:</label>
+      <div class="order-type-row">
+        <label><input type="radio" name="orderType" value="pickup" checked /> Pickup</label>
+        <label><input type="radio" name="orderType" value="delivery" /> Delivery</label>
+      </div>
 
-    <label>Order Type:</label>
-    <label><input type="radio" name="orderType" value="pickup" checked /> Pickup</label>
-    <label><input type="radio" name="orderType" value="delivery" /> Delivery</label>
+      <div id="pickupFields">
+        <label for="licensePlate">Car License Plate (for pickup):</label>
+        <input type="text" id="licensePlate" name="licensePlate" />
+      </div>
 
-    <!-- Pickup-only fields -->
-    <div id="pickupFields">
-      <label for="licensePlate">Car License Plate (for pickup):</label>
-      <input type="text" id="licensePlate" name="licensePlate" />
-    </div>
+      <div id="deliveryFields" style="display:none;">
+        <label for="cityInput">City:</label>
+        <input type="text" id="cityInput" name="city" />
 
-    <!-- Delivery-only fields -->
-    <div id="deliveryFields" style="display:none;">
-      <label for="cityInput">City:</label>
-      <input type="text" id="cityInput" name="city" />
+        <label for="streetInput">Street:</label>
+        <input type="text" id="streetInput" name="street" />
 
-      <label for="streetInput">Street:</label>
-      <input type="text" id="streetInput" name="street" />
+        <label for="villa">Villa/Apartment:</label>
+        <input type="text" id="villa" name="villa" />
 
-      <label for="villa">Villa/Apartment:</label>
-      <input type="text" id="villa" name="villa" />
+        <label for="locationInput">Map Location:</label>
+        <input type="text" id="locationInput" name="location" readonly placeholder="Click to select on map" />
+        <button type="button" class="locate-btn" id="locateMeBtn" title="Locate Me">📍</button>
+      </div>
 
-      <label for="locationInput">Map Location:</label>
-      <input type="text" id="locationInput" name="location" readonly placeholder="Click to select on map" />
-      <button type="button" id="locateMeBtn" type="button">Locate Me</button>
-    </div>
+      <label for="boxesInput">
+        Number of Boxes:
+        <span id="infoIcon" class="info-icon" title="Each box contains 4 pieces of bread.">ℹ️</span>
+      </label>
+      <div class="boxes-row">
+        <input type="number" id="boxesInput" name="boxes" min="1" max="30" value="1" required class="boxes-desktop" />
+        <select id="boxesSelect" class="boxes-mobile"></select>
+      </div>
 
-    <label for="boxesInput">
-      Number of Boxes:
-      <span id="infoIcon" style="cursor:help;" title="Each box contains 4 pieces of bread.">ℹ️</span>
-    </label>
-    <input type="number" id="boxesInput" name="boxes" min="1" max="30" value="1" required />
-    <select id="boxesSelect" style="margin-top:0.5em;"></select>
+      <label for="special">Special Instructions:</label>
+      <textarea id="special" name="special" rows="2" placeholder="Anything else we should know?"></textarea>
 
-    <label for="special">Special Instructions:</label>
-    <input type="text" id="special" name="special" placeholder="Anything else we should know?" />
+      <label for="orderDate"><b>Date you want your bread:</b></label>
+      <input type="date" id="orderDate" name="orderDate" required />
 
-    <label for="orderDate"><b>Date you want your bread:</b></label>
-    <input type="date" id="orderDate" name="orderDate" required />
+      <div id="orderSummary" class="order-summary">
+        Total: <span id="totalPrice"></span> AED
+      </div>
 
-    <div id="orderSummary">
-      Total: <span id="totalPrice"></span> AED
-    </div>
+      <button type="submit">Submit Order</button>
+    </form>
+  </div>
 
-    <button type="submit">Submit Order</button>
-  </form>
-
-  <!-- Map Modal -->
-  <div id="mapModal" aria-hidden="true">
-    <div id="mapModalContent">
-      <span id="closeMapModal" title="Close">&times;</span>
-      <h3>Select Your Location</h3>
+  <!-- Map Modal (optional, if you use the map picker) -->
+  <div id="mapModal" class="modal" aria-hidden="true">
+    <div id="mapModalContent" class="modal-content">
+      <button id="closeMapModal" class="close" title="Close">&times;</button>
+      <div class="map-instructions">Drag the pin or tap to select your location:</div>
       <div id="map"></div>
-      <button type="button" id="confirmLocation">Confirm Location</button>
+      <button type="button" id="confirmLocation" class="confirm-btn">Confirm Location</button>
     </div>
   </div>
 
-  <!-- Leaflet JS (for map) -->
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <span>Contact us: <a href="mailto:hello@bunku.ae">hello@bunku.ae</a></span>
+      <span class="footer-socials">
+        <a href="https://instagram.com/bunkubread" target="_blank">Instagram</a> |
+        <a href="https://t.me/bunkubread" target="_blank">Telegram</a>
+      </span>
+      <span class="footer-copy">© 2025 Bunku Bread</span>
+    </div>
+  </footer>
+
+  <!-- Leaflet JS (for map, optional) -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <!-- Supabase JS -->
+  <!-- Supabase JS (for backend, optional) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <!-- Your main JS -->
   <script src="script.js"></script>
