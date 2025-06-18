@@ -20,7 +20,7 @@ const cityInput = document.getElementById('cityInput');
 const streetInput = document.getElementById('streetInput');
 const locateMeBtn = document.getElementById('locateMeBtn');
 const phoneInput = document.getElementById('phoneInput');
-const orderDateInput = document.getElementById('orderDate'); // <-- NEW
+const orderDateInput = document.getElementById('orderDate');
 
 let deliveryFee = 35;
 let map = null;
@@ -108,7 +108,6 @@ orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields
 updateFields();
 
 // --- MAP LOGIC ---
-
 locationInput.addEventListener('click', () => {
   openMapModal();
 });
@@ -117,7 +116,6 @@ function openMapModal() {
   mapModal.style.display = 'block';
   setTimeout(() => {
     mapModal.setAttribute('aria-hidden', 'false');
-    // Always clear the map container before initializing
     document.getElementById('map').innerHTML = '';
     let lat = 25.276987, lng = 55.296249;
     if (locationInput.value) {
@@ -142,7 +140,6 @@ function closeMapModalFn() {
     map = null;
     marker = null;
   }
-  // Clear the map container to allow re-initialization
   document.getElementById('map').innerHTML = '';
 }
 closeMapModal.addEventListener('click', closeMapModalFn);
@@ -154,7 +151,6 @@ window.addEventListener('click', function(e) {
 });
 
 function initMap(lat = 25.276987, lng = 55.296249) {
-  // Defensive: clear map container before every init
   document.getElementById('map').innerHTML = '';
   map = L.map('map').setView([lat, lng], 15);
 
@@ -186,7 +182,6 @@ confirmLocation.addEventListener('click', () => {
   closeMapModalFn();
 });
 
-// --- "Locate Me" always opens modal, then centers map if geolocation succeeds ---
 locateMeBtn.addEventListener('click', function() {
   openMapModal();
 
@@ -206,7 +201,7 @@ locateMeBtn.addEventListener('click', function() {
           locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
           confirmLocation.disabled = false;
         }
-      }, 200); // Wait for map to finish initializing
+      }, 200);
     },
     (error) => {
       alert("Unable to get your location. Using default.");
@@ -231,7 +226,7 @@ infoIcon.addEventListener('mouseleave', () => {
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
 });
 
-// --- FORM VALIDATION & SUPABASE SUBMIT + ACTIVEPIECES WEBHOOK ---
+// --- FORM VALIDATION & SUBMIT ---
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   let errors = [];
@@ -302,7 +297,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     location: formData.get('location'),
     special: formData.get('special'),
     total: total,
-    date: formData.get('orderDate') // <-- NEW FIELD
+    date: formData.get('orderDate')
   };
 
   // Insert into Supabase
