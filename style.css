@@ -15,7 +15,7 @@
     #f7e7c4 100%
   );
   background-size: 250% 250%;
-  animation: gradientMove 14s ease-in-out infinite;
+  animation: gradientMove 18s ease-in-out infinite;
   opacity: 1;
 }
 @keyframes gradientMove {
@@ -48,10 +48,10 @@ body {
 
 .logo-img {
   display: block;
-  max-width: 120px;
-  width: 50%;
+  max-width: 130px;
+  width: 54%;
   margin: 0 auto 16px auto;
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 2px 16px rgba(0,0,0,0.06);
 }
 
@@ -206,7 +206,7 @@ body {
   display: none;
 }
 
-/* Map Modal Styles (if you use the map picker) */
+/* Map Modal Styles */
 .modal {
   display: none;
   position: fixed;
