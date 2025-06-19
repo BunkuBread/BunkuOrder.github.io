@@ -17,7 +17,7 @@
     <h1 class="logo-text">Bunku Bread</h1>
     <div class="subtitle">Freshly baked. Delivered with love.</div>
 
-    <!-- Step 1: Order Form -->
+    <!-- Order Form -->
     <form id="orderForm" class="order-form" autocomplete="off">
       <label for="firstName">First Name:</label>
       <input type="text" id="firstName" name="first_name" required />
@@ -73,23 +73,6 @@
         Total: <span id="totalPrice"></span> AED
       </div>
 
-      <button type="button" id="nextToPayment">Next</button>
-    </form>
-
-    <!-- Step 2: Payment Form -->
-    <form id="paymentForm" class="order-form" style="display:none;">
-      <label for="accountHolder">Account Holder Name:</label>
-      <input type="text" id="accountHolder" name="account_holder" required />
-
-      <label for="bankName">Bank Name:</label>
-      <input type="text" id="bankName" name="bank_name" required />
-
-      <label for="accountNumber">Account Number:</label>
-      <input type="text" id="accountNumber" name="account_number" required />
-
-      <label for="iban">IBAN:</label>
-      <input type="text" id="iban" name="iban" required />
-
       <button type="submit">Submit Order</button>
     </form>
   </div>
@@ -104,14 +87,14 @@
     </div>
   </div>
 
-  <!-- Bank Slip Modal -->
-  <div id="bankSlipModal" class="modal" aria-hidden="true">
+  <!-- WhatsApp Modal -->
+  <div id="whatsappModal" class="modal" aria-hidden="true">
     <div class="modal-content">
-      <h2>Please send your bank slip</h2>
-      <p>To confirm your order, you must send the bank slip to this number:</p>
+      <h2>Send Your Order via WhatsApp</h2>
+      <p>To complete your order, please click below and send us your order details and payment amount on WhatsApp:</p>
       <p style="font-weight:bold; font-size:1.2em;">+971 54 458 8113</p>
-      <p>This is <span style="color:#e74c3c;font-weight:bold;">mandatory</span> to confirm your order.</p>
-      <button id="confirmBankSlipBtn">I understand.</button>
+      <p>Your total: <span id="waTotal" style="font-weight:bold; color:#a0522d;"></span> AED</p>
+      <button id="waSendBtn">Send via WhatsApp</button>
     </div>
   </div>
 
