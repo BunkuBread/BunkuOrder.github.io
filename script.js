@@ -3,6 +3,9 @@ const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- Activepieces Webhook URL ---
+const ACTIVEPIECES_WEBHOOK_URL = "YOUR_ACTIVEPIECES_WEBHOOK_URL";
+
 // --- DOM Elements ---
 const orderTypeRadios = document.querySelectorAll('input[name="order_type"]');
 const pickupFields = document.getElementById('pickupFields');
@@ -253,6 +256,21 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     alert('Sorry, there was an error placing your order. Please try again.');
     console.error(error);
     return false;
+  }
+
+  // --- SEND TO ACTIVEPIECES ---
+  try {
+    await fetch(ACTIVEPIECES_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        ...orderData,
+        total: total
+      })
+    });
+  } catch (err) {
+    console.error('Failed to send to Activepieces:', err);
+    // Optionally alert the user or continue anyway
   }
 
   // Show WhatsApp modal
