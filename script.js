@@ -274,7 +274,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
     return false;
   }
 
-  // Show animated modal (not just alert)
+  // Show animated modal (not just alert) ONLY AFTER successful submission
   const modal = document.getElementById('bankSlipModal');
   modal.style.display = 'flex';
   modal.setAttribute('aria-hidden', 'false');
