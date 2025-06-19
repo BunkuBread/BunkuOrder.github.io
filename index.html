@@ -16,25 +16,27 @@
     <img src="images/BunkuBreadLogo.jpg" alt="Bunku Bread Logo" class="logo-img" />
     <h1 class="logo-text">Bunku Bread</h1>
     <div class="subtitle">Freshly baked. Delivered with love.</div>
+
+    <!-- Step 1: Order Form -->
     <form id="orderForm" class="order-form" autocomplete="off">
       <label for="firstName">First Name:</label>
-      <input type="text" id="firstName" name="firstName" required />
+      <input type="text" id="firstName" name="first_name" required />
 
       <label for="lastName">Last Name:</label>
-      <input type="text" id="lastName" name="lastName" required />
+      <input type="text" id="lastName" name="last_name" required />
 
       <label for="phoneInput">Phone Number: <span class="phone-hint">(05X XXX-XXXX)</span></label>
       <input type="tel" id="phoneInput" name="phone" required />
 
       <label>Order Type:</label>
       <div class="order-type-row">
-        <label><input type="radio" name="orderType" value="pickup" checked /> Pickup</label>
-        <label><input type="radio" name="orderType" value="delivery" /> Delivery</label>
+        <label><input type="radio" name="order_type" value="pickup" checked /> Pickup</label>
+        <label><input type="radio" name="order_type" value="delivery" /> Delivery</label>
       </div>
 
       <div id="pickupFields">
         <label for="licensePlate">Car License Plate (for pickup):</label>
-        <input type="text" id="licensePlate" name="licensePlate" />
+        <input type="text" id="licensePlate" name="license_plate" />
       </div>
 
       <div id="deliveryFields" style="display:none;">
@@ -65,11 +67,28 @@
       <textarea id="special" name="special" rows="2" placeholder="Anything else we should know?"></textarea>
 
       <label for="orderDate"><b>Date you want your bread:</b></label>
-      <input type="date" id="orderDate" name="orderDate" required />
+      <input type="date" id="orderDate" name="date" required />
 
       <div id="orderSummary" class="order-summary">
         Total: <span id="totalPrice"></span> AED
       </div>
+
+      <button type="button" id="nextToPayment">Next</button>
+    </form>
+
+    <!-- Step 2: Payment Form -->
+    <form id="paymentForm" class="order-form" style="display:none;">
+      <label for="accountHolder">Account Holder Name:</label>
+      <input type="text" id="accountHolder" name="account_holder" required />
+
+      <label for="bankName">Bank Name:</label>
+      <input type="text" id="bankName" name="bank_name" required />
+
+      <label for="accountNumber">Account Number:</label>
+      <input type="text" id="accountNumber" name="account_number" required />
+
+      <label for="iban">IBAN:</label>
+      <input type="text" id="iban" name="iban" required />
 
       <button type="submit">Submit Order</button>
     </form>
