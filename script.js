@@ -21,6 +21,11 @@ const closeMapModal = document.getElementById('closeMapModal');
 const confirmLocation = document.getElementById('confirmLocation');
 const mapDiv = document.getElementById('map');
 
+// --- WhatsApp Modal Elements ---
+const waModal = document.getElementById('whatsappModal');
+const waTotal = document.getElementById('waTotal');
+const waSendBtn = document.getElementById('waSendBtn');
+
 let deliveryFee = 35;
 let map = null;
 let marker = null;
@@ -225,75 +230,63 @@ locateMeBtn && locateMeBtn.addEventListener('click', function() {
   );
 });
 
-// --- MULTI-STEP FORM LOGIC ---
-let orderData = {};
-
-document.getElementById('nextToPayment').addEventListener('click', function() {
-  const orderForm = document.getElementById('orderForm');
-  if (orderForm.checkValidity()) {
-    // Gather all order form data
-    const formData = new FormData(orderForm);
-
-    // Phone validation
-    let phoneVal = phoneInput.value.trim();
-    let formatted = formatPhoneNumber(phoneVal);
-    if (!formatted) {
-      phoneInput.classList.add('input-error');
-      phoneInput.focus();
-      alert('Phone number must start with 05 and be 10 digits, e.g. 056 399-6650');
-      return;
-    } else {
-      phoneInput.value = formatted;
-      phoneInput.classList.remove('input-error');
-    }
-
-    formData.forEach((v, k) => orderData[k] = v);
-
-    // Hide order, show payment
-    orderForm.style.display = 'none';
-    document.getElementById('paymentForm').style.display = 'flex';
-    window.scrollTo({top: 0, behavior: 'smooth'});
-  } else {
-    orderForm.reportValidity();
-  }
-});
-
-document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+// --- ORDER FORM SUBMISSION & WHATSAPP MODAL ---
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const paymentData = new FormData(this);
-  paymentData.forEach((v, k) => orderData[k] = v);
 
-  // Insert into Supabase
+  // Gather order data
+  const formData = new FormData(this);
+  let orderData = {};
+  formData.forEach((v, k) => orderData[k] = v);
+
+  // Calculate total
+  let boxes = parseInt(orderData['boxes'], 10) || 1;
+  let orderType = orderData['order_type'] || 'pickup';
+  let total = boxes * 50;
+  if (orderType === 'delivery') total += 35;
+
+  // Save to Supabase
   const { data, error } = await supabase
     .from('orders')
     .insert([orderData]);
-
   if (error) {
     alert('Sorry, there was an error placing your order. Please try again.');
     console.error(error);
     return false;
   }
 
-  // Show modal ONLY after successful submission
-  const modal = document.getElementById('bankSlipModal');
-  modal.classList.add('show');
-  modal.setAttribute('aria-hidden', 'false');
+  // Show WhatsApp modal
+  waTotal.textContent = total;
+  waModal.classList.add('show');
+  waModal.setAttribute('aria-hidden', 'false');
 
-  // Disable submit button to prevent multiple submits
-  const submitBtn = this.querySelector('button[type="submit"]');
-  submitBtn.disabled = true;
+  // WhatsApp message
+  waSendBtn.onclick = () => {
+    // Build message
+    let msg = `Hello! I just placed an order on the Bunku Bread website.%0A%0A`;
+    msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}%0A`;
+    msg += `Phone: ${orderData['phone'] || ''}%0A`;
+    msg += `Order Type: ${orderType}%0A`;
+    if(orderType === 'delivery') {
+      msg += `City: ${orderData['city'] || ''}%0AStreet: ${orderData['street'] || ''}%0AVilla/Apartment: ${orderData['villa'] || ''}%0A`;
+      msg += `Location: ${orderData['location'] || ''}%0A`;
+    } else {
+      msg += `Car License Plate: ${orderData['license_plate'] || ''}%0A`;
+    }
+    msg += `Boxes: ${boxes}%0A`;
+    msg += `Special Instructions: ${orderData['special'] || ''}%0A`;
+    msg += `Date: ${orderData['date'] || ''}%0A`;
+    msg += `Total: ${total} AED%0A%0A`;
+    msg += `Please find my order details above.`;
 
-  // Wait for user confirmation
-  const confirmBtn = document.getElementById('confirmBankSlipBtn');
-  confirmBtn.onclick = () => {
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden', 'true');
-    submitBtn.disabled = false;
-    alert('Thank you! Your order is now confirmed once we receive your bank slip.');
-    // Reset forms or redirect as needed
-    this.reset();
+    // WhatsApp redirect
+    const waUrl = `https://wa.me/971544588113?text=${msg}`;
+    window.open(waUrl, '_blank');
+
+    // Hide modal and reset form
+    waModal.classList.remove('show');
+    waModal.setAttribute('aria-hidden', 'true');
     document.getElementById('orderForm').reset();
-    this.style.display = 'none';
-    document.getElementById('orderForm').style.display = 'flex';
+    updateTotal();
   };
 });
