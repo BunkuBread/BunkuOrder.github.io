@@ -14,8 +14,35 @@ const orderSummaryDiv = document.getElementById('orderSummary');
 const infoIcon = document.getElementById('infoIcon');
 const phoneInput = document.getElementById('phoneInput');
 const orderDateInput = document.getElementById('orderDate');
+const locationInput = document.getElementById('locationInput');
+const locateMeBtn = document.getElementById('locateMeBtn');
+const mapModal = document.getElementById('mapModal');
+const closeMapModal = document.getElementById('closeMapModal');
+const confirmLocation = document.getElementById('confirmLocation');
+const mapDiv = document.getElementById('map');
 
 let deliveryFee = 35;
+let map = null;
+let marker = null;
+
+// --- Phone Number Formatting and Validation ---
+function formatPhoneNumber(value) {
+  let digits = value.replace(/\D/g, '');
+  if (!digits.startsWith('05') || digits.length !== 10) {
+    return null;
+  }
+  return digits.slice(0,3) + ' ' + digits.slice(3,6) + '-' + digits.slice(6);
+}
+
+phoneInput.addEventListener('blur', () => {
+  const formatted = formatPhoneNumber(phoneInput.value);
+  if (formatted) {
+    phoneInput.value = formatted;
+    phoneInput.classList.remove('input-error');
+  } else {
+    phoneInput.classList.add('input-error');
+  }
+});
 
 // --- Responsive Boxes Input ---
 function populateBoxesDropdown() {
@@ -96,6 +123,108 @@ infoIcon.addEventListener('mouseleave', () => {
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
 });
 
+// --- MAP LOGIC ---
+locationInput && locationInput.addEventListener('click', () => {
+  openMapModal();
+});
+
+function openMapModal() {
+  mapModal.style.display = 'block';
+  setTimeout(() => {
+    mapModal.setAttribute('aria-hidden', 'false');
+    mapDiv.innerHTML = '';
+    let lat = 25.276987, lng = 55.296249;
+    if (locationInput.value) {
+      const parts = locationInput.value.split(',');
+      if (parts.length === 2) {
+        lat = parseFloat(parts[0]);
+        lng = parseFloat(parts[1]);
+      }
+    }
+    initMap(lat, lng);
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 100);
+  }, 10);
+}
+
+function closeMapModalFn() {
+  mapModal.style.display = 'none';
+  mapModal.setAttribute('aria-hidden', 'true');
+  if (map) {
+    map.remove();
+    map = null;
+    marker = null;
+  }
+  mapDiv.innerHTML = '';
+}
+closeMapModal && closeMapModal.addEventListener('click', closeMapModalFn);
+
+window.addEventListener('click', function(e) {
+  if (e.target === mapModal) {
+    closeMapModalFn();
+  }
+});
+
+function initMap(lat = 25.276987, lng = 55.296249) {
+  mapDiv.innerHTML = '';
+  map = L.map('map').setView([lat, lng], 15);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
+
+  locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+  confirmLocation.disabled = false;
+
+  marker.on('dragend', function(e) {
+    const newPos = marker.getLatLng();
+    locationInput.value = `${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`;
+    confirmLocation.disabled = false;
+  });
+
+  map.on('click', function(e) {
+    marker.setLatLng(e.latlng);
+    locationInput.value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+    confirmLocation.disabled = false;
+  });
+
+  setTimeout(() => map.invalidateSize(), 200);
+}
+
+confirmLocation && confirmLocation.addEventListener('click', () => {
+  closeMapModalFn();
+});
+
+locateMeBtn && locateMeBtn.addEventListener('click', function() {
+  openMapModal();
+
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      setTimeout(() => {
+        if (map && marker) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          map.setView([lat, lng], 15);
+          marker.setLatLng([lat, lng]);
+          locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+          confirmLocation.disabled = false;
+        }
+      }, 200);
+    },
+    (error) => {
+      alert("Unable to get your location. Using default.");
+    }
+  );
+});
+
 // --- MULTI-STEP FORM LOGIC ---
 let orderData = {};
 
@@ -104,7 +233,22 @@ document.getElementById('nextToPayment').addEventListener('click', function() {
   if (orderForm.checkValidity()) {
     // Gather all order form data
     const formData = new FormData(orderForm);
+
+    // Phone validation
+    let phoneVal = phoneInput.value.trim();
+    let formatted = formatPhoneNumber(phoneVal);
+    if (!formatted) {
+      phoneInput.classList.add('input-error');
+      phoneInput.focus();
+      alert('Phone number must start with 05 and be 10 digits, e.g. 056 399-6650');
+      return;
+    } else {
+      phoneInput.value = formatted;
+      phoneInput.classList.remove('input-error');
+    }
+
     formData.forEach((v, k) => orderData[k] = v);
+
     // Hide order, show payment
     orderForm.style.display = 'none';
     document.getElementById('paymentForm').style.display = 'flex';
@@ -130,11 +274,26 @@ document.getElementById('paymentForm').addEventListener('submit', async function
     return false;
   }
 
-  alert('Order submitted! We will contact you soon.');
-  this.reset();
-  // Optionally redirect or reset forms here
-  document.getElementById('paymentForm').style.display = 'none';
-  document.getElementById('orderForm').style.display = 'flex';
-});
+  // Show animated modal (not just alert)
+  const modal = document.getElementById('bankSlipModal');
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden', 'false');
 
-// --- OPTIONAL: Add your map/modal and phone validation logic here as before ---
+  // Disable submit button to prevent multiple submits
+  const submitBtn = this.querySelector('button[type="submit"]');
+  submitBtn.disabled = true;
+
+  // Wait for user confirmation
+  const confirmBtn = document.getElementById('confirmBankSlipBtn');
+  confirmBtn.onclick = () => {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+    submitBtn.disabled = false;
+    alert('Thank you! Your order is now confirmed once we receive your bank slip.');
+    // Reset forms or redirect as needed
+    this.reset();
+    document.getElementById('orderForm').reset();
+    this.style.display = 'none';
+    document.getElementById('orderForm').style.display = 'flex';
+  };
+});
