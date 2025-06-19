@@ -274,9 +274,9 @@ document.getElementById('paymentForm').addEventListener('submit', async function
     return false;
   }
 
-  // Show animated modal (not just alert) ONLY AFTER successful submission
+  // Show modal ONLY after successful submission
   const modal = document.getElementById('bankSlipModal');
-  modal.style.display = 'flex';
+  modal.classList.add('show');
   modal.setAttribute('aria-hidden', 'false');
 
   // Disable submit button to prevent multiple submits
@@ -286,7 +286,7 @@ document.getElementById('paymentForm').addEventListener('submit', async function
   // Wait for user confirmation
   const confirmBtn = document.getElementById('confirmBankSlipBtn');
   confirmBtn.onclick = () => {
-    modal.style.display = 'none';
+    modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
     submitBtn.disabled = false;
     alert('Thank you! Your order is now confirmed once we receive your bank slip.');
