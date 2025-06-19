@@ -4,7 +4,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Activepieces Webhook URL ---
-const ACTIVEPIECES_WEBHOOK_URL = "YOUR_ACTIVEPIECES_WEBHOOK_URL";
+const ACTIVEPIECES_WEBHOOK_URL = "https://cloud.activepieces.com/api/v1/webhooks/xgfV2PId0kguctkoS27l2";
 
 // --- DOM Elements ---
 const orderTypeRadios = document.querySelectorAll('input[name="order_type"]');
