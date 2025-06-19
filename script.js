@@ -4,46 +4,18 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- DOM Elements ---
-const orderTypeRadios = document.querySelectorAll('input[name="orderType"]');
+const orderTypeRadios = document.querySelectorAll('input[name="order_type"]');
 const pickupFields = document.getElementById('pickupFields');
 const deliveryFields = document.getElementById('deliveryFields');
 const boxesInput = document.getElementById('boxesInput');
 const boxesSelect = document.getElementById('boxesSelect');
 const totalPriceSpan = document.getElementById('totalPrice');
 const orderSummaryDiv = document.getElementById('orderSummary');
-const mapModal = document.getElementById('mapModal');
-const closeMapModal = document.getElementById('closeMapModal');
-const confirmLocation = document.getElementById('confirmLocation');
-const locationInput = document.getElementById('locationInput');
 const infoIcon = document.getElementById('infoIcon');
-const cityInput = document.getElementById('cityInput');
-const streetInput = document.getElementById('streetInput');
-const locateMeBtn = document.getElementById('locateMeBtn');
 const phoneInput = document.getElementById('phoneInput');
 const orderDateInput = document.getElementById('orderDate');
 
 let deliveryFee = 35;
-let map = null;
-let marker = null;
-
-// --- Phone Number Formatting and Validation ---
-function formatPhoneNumber(value) {
-  let digits = value.replace(/\D/g, '');
-  if (!digits.startsWith('05') || digits.length !== 10) {
-    return null;
-  }
-  return digits.slice(0,3) + ' ' + digits.slice(3,6) + '-' + digits.slice(6);
-}
-
-phoneInput.addEventListener('blur', () => {
-  const formatted = formatPhoneNumber(phoneInput.value);
-  if (formatted) {
-    phoneInput.value = formatted;
-    phoneInput.classList.remove('input-error');
-  } else {
-    phoneInput.classList.add('input-error');
-  }
-});
 
 // --- Responsive Boxes Input ---
 function populateBoxesDropdown() {
@@ -68,7 +40,7 @@ boxesSelect.addEventListener('change', () => {
 
 // --- FORM LOGIC ---
 function updateFields() {
-  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  const orderType = document.querySelector('input[name="order_type"]:checked').value;
   if (orderType === 'pickup') {
     pickupFields.style.display = 'block';
     deliveryFields.style.display = 'none';
@@ -76,7 +48,7 @@ function updateFields() {
     document.getElementsByName('location')[0].required = false;
     document.getElementsByName('street')[0].required = false;
     document.getElementsByName('villa')[0].required = false;
-    document.getElementsByName('licensePlate')[0].required = true;
+    document.getElementsByName('license_plate')[0].required = true;
   } else {
     pickupFields.style.display = 'none';
     deliveryFields.style.display = 'block';
@@ -84,7 +56,7 @@ function updateFields() {
     document.getElementsByName('location')[0].required = true;
     document.getElementsByName('street')[0].required = true;
     document.getElementsByName('villa')[0].required = true;
-    document.getElementsByName('licensePlate')[0].required = false;
+    document.getElementsByName('license_plate')[0].required = false;
   }
   updateTotal();
 }
@@ -95,7 +67,7 @@ function updateTotal() {
   if (boxes > 30) boxes = 30;
   boxesInput.value = boxes;
   boxesSelect.value = boxes;
-  const orderType = document.querySelector('input[name="orderType"]:checked').value;
+  const orderType = document.querySelector('input[name="order_type"]:checked').value;
   let total = boxes * 50;
   if (orderType === 'delivery') total += deliveryFee;
   totalPriceSpan.textContent = total;
@@ -106,108 +78,6 @@ function updateTotal() {
 
 orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
 updateFields();
-
-// --- MAP LOGIC ---
-locationInput.addEventListener('click', () => {
-  openMapModal();
-});
-
-function openMapModal() {
-  mapModal.style.display = 'block';
-  setTimeout(() => {
-    mapModal.setAttribute('aria-hidden', 'false');
-    document.getElementById('map').innerHTML = '';
-    let lat = 25.276987, lng = 55.296249;
-    if (locationInput.value) {
-      const parts = locationInput.value.split(',');
-      if (parts.length === 2) {
-        lat = parseFloat(parts[0]);
-        lng = parseFloat(parts[1]);
-      }
-    }
-    initMap(lat, lng);
-    setTimeout(() => {
-      if (map) map.invalidateSize();
-    }, 100);
-  }, 10);
-}
-
-function closeMapModalFn() {
-  mapModal.style.display = 'none';
-  mapModal.setAttribute('aria-hidden', 'true');
-  if (map) {
-    map.remove();
-    map = null;
-    marker = null;
-  }
-  document.getElementById('map').innerHTML = '';
-}
-closeMapModal.addEventListener('click', closeMapModalFn);
-
-window.addEventListener('click', function(e) {
-  if (e.target === mapModal) {
-    closeMapModalFn();
-  }
-});
-
-function initMap(lat = 25.276987, lng = 55.296249) {
-  document.getElementById('map').innerHTML = '';
-  map = L.map('map').setView([lat, lng], 15);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-
-  locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-  confirmLocation.disabled = false;
-
-  marker.on('dragend', function(e) {
-    const newPos = marker.getLatLng();
-    locationInput.value = `${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`;
-    confirmLocation.disabled = false;
-  });
-
-  map.on('click', function(e) {
-    marker.setLatLng(e.latlng);
-    locationInput.value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
-    confirmLocation.disabled = false;
-  });
-
-  setTimeout(() => map.invalidateSize(), 200);
-}
-
-confirmLocation.addEventListener('click', () => {
-  closeMapModalFn();
-});
-
-locateMeBtn.addEventListener('click', function() {
-  openMapModal();
-
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by your browser");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      setTimeout(() => {
-        if (map && marker) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          map.setView([lat, lng], 15);
-          marker.setLatLng([lat, lng]);
-          locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-          confirmLocation.disabled = false;
-        }
-      }, 200);
-    },
-    (error) => {
-      alert("Unable to get your location. Using default.");
-    }
-  );
-});
 
 // --- INFO ICON TOOLTIP ---
 const tooltip = document.createElement('div');
@@ -226,79 +96,28 @@ infoIcon.addEventListener('mouseleave', () => {
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
 });
 
-// --- FORM VALIDATION & SUBMIT ---
-document.getElementById('orderForm').addEventListener('submit', async function(e) {
+// --- MULTI-STEP FORM LOGIC ---
+let orderData = {};
+
+document.getElementById('nextToPayment').addEventListener('click', function() {
+  const orderForm = document.getElementById('orderForm');
+  if (orderForm.checkValidity()) {
+    // Gather all order form data
+    const formData = new FormData(orderForm);
+    formData.forEach((v, k) => orderData[k] = v);
+    // Hide order, show payment
+    orderForm.style.display = 'none';
+    document.getElementById('paymentForm').style.display = 'flex';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  } else {
+    orderForm.reportValidity();
+  }
+});
+
+document.getElementById('paymentForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  let errors = [];
-  
-  // Phone validation
-  let phoneVal = phoneInput.value.trim();
-  let formatted = formatPhoneNumber(phoneVal);
-  if (!formatted) {
-    errors.push('Phone number must start with 05 and be 10 digits, e.g. 056 399-6650');
-    phoneInput.classList.add('input-error');
-  } else {
-    phoneInput.value = formatted;
-    phoneInput.classList.remove('input-error');
-  }
-
-  // Boxes validation
-  let boxes = parseInt(boxesInput.value, 10);
-  if (isNaN(boxes) || boxes < 1 || boxes > 30) {
-    errors.push('Please select a valid number of boxes.');
-    boxesInput.classList.add('input-error');
-    boxesSelect.classList.add('input-error');
-  } else {
-    boxesInput.classList.remove('input-error');
-    boxesSelect.classList.remove('input-error');
-  }
-
-  // Required fields
-  const requiredFields = document.querySelectorAll('#orderForm [required]');
-  requiredFields.forEach(field => {
-    if (!field.value.trim()) {
-      errors.push('Please fill all required fields.');
-      field.classList.add('input-error');
-    } else {
-      field.classList.remove('input-error');
-    }
-  });
-
-  // Date validation
-  if (!orderDateInput.value) {
-    errors.push('Please select a date for your bread.');
-    orderDateInput.classList.add('input-error');
-  } else {
-    orderDateInput.classList.remove('input-error');
-  }
-
-  if (errors.length > 0) {
-    alert(errors[0]);
-    return false;
-  }
-
-  // Gather form data and map to Supabase column names
-  const formData = new FormData(this);
-  const orderType = document.querySelector('input[name="orderType"]:checked').value;
-  let boxesCount = Number(formData.get('boxes'));
-  let total = boxesCount * 50;
-  if (orderType === 'delivery') total += 35;
-
-  const orderData = {
-    first_name: formData.get('firstName'),
-    last_name: formData.get('lastName'),
-    phone: formData.get('phone'),
-    order_type: orderType,
-    boxes: boxesCount,
-    license_plate: formData.get('licensePlate'),
-    city: formData.get('city'),
-    street: formData.get('street'),
-    villa: formData.get('villa'),
-    location: formData.get('location'),
-    special: formData.get('special'),
-    total: total,
-    date: formData.get('orderDate')
-  };
+  const paymentData = new FormData(this);
+  paymentData.forEach((v, k) => orderData[k] = v);
 
   // Insert into Supabase
   const { data, error } = await supabase
@@ -311,13 +130,11 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  // Send order to Activepieces webhook
-  fetch('https://cloud.activepieces.com/api/v1/webhooks/xgfV2PId0kguctkoS27l2', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(orderData)
-  });
-
   alert('Order submitted! We will contact you soon.');
   this.reset();
+  // Optionally redirect or reset forms here
+  document.getElementById('paymentForm').style.display = 'none';
+  document.getElementById('orderForm').style.display = 'flex';
 });
+
+// --- OPTIONAL: Add your map/modal and phone validation logic here as before ---
