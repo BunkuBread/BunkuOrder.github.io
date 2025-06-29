@@ -17,12 +17,6 @@ const orderSummaryDiv = document.getElementById('orderSummary');
 const infoIcon = document.getElementById('infoIcon');
 const phoneInput = document.getElementById('phoneInput');
 const orderDateInput = document.getElementById('orderDate');
-const locationInput = document.getElementById('locationInput');
-const locateMeBtn = document.getElementById('locateMeBtn');
-const mapModal = document.getElementById('mapModal');
-const closeMapModal = document.getElementById('closeMapModal');
-const confirmLocation = document.getElementById('confirmLocation');
-const mapDiv = document.getElementById('map');
 
 // --- WhatsApp Modal Elements ---
 const waModal = document.getElementById('whatsappModal');
@@ -30,8 +24,6 @@ const waTotal = document.getElementById('waTotal');
 const waSendBtn = document.getElementById('waSendBtn');
 
 let deliveryFee = 35;
-let map = null;
-let marker = null;
 
 // --- Phone Number Formatting and Validation ---
 function formatPhoneNumber(value) {
@@ -80,7 +72,6 @@ function updateFields() {
     pickupFields.style.display = 'block';
     deliveryFields.style.display = 'none';
     document.getElementsByName('city')[0].required = false;
-    document.getElementsByName('location')[0].required = false;
     document.getElementsByName('street')[0].required = false;
     document.getElementsByName('villa')[0].required = false;
     document.getElementsByName('license_plate')[0].required = true;
@@ -88,7 +79,6 @@ function updateFields() {
     pickupFields.style.display = 'none';
     deliveryFields.style.display = 'block';
     document.getElementsByName('city')[0].required = true;
-    document.getElementsByName('location')[0].required = true;
     document.getElementsByName('street')[0].required = true;
     document.getElementsByName('villa')[0].required = true;
     document.getElementsByName('license_plate')[0].required = false;
@@ -129,108 +119,6 @@ infoIcon.addEventListener('mouseenter', () => {
 infoIcon.addEventListener('mouseleave', () => {
   tooltip.style.display = 'none';
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
-});
-
-// --- MAP LOGIC ---
-locationInput && locationInput.addEventListener('click', () => {
-  openMapModal();
-});
-
-function openMapModal() {
-  mapModal.style.display = 'block';
-  setTimeout(() => {
-    mapModal.setAttribute('aria-hidden', 'false');
-    mapDiv.innerHTML = '';
-    let lat = 25.276987, lng = 55.296249;
-    if (locationInput.value) {
-      const parts = locationInput.value.split(',');
-      if (parts.length === 2) {
-        lat = parseFloat(parts[0]);
-        lng = parseFloat(parts[1]);
-      }
-    }
-    initMap(lat, lng);
-    setTimeout(() => {
-      if (map) map.invalidateSize();
-    }, 100);
-  }, 10);
-}
-
-function closeMapModalFn() {
-  mapModal.style.display = 'none';
-  mapModal.setAttribute('aria-hidden', 'true');
-  if (map) {
-    map.remove();
-    map = null;
-    marker = null;
-  }
-  mapDiv.innerHTML = '';
-}
-closeMapModal && closeMapModal.addEventListener('click', closeMapModalFn);
-
-window.addEventListener('click', function(e) {
-  if (e.target === mapModal) {
-    closeMapModalFn();
-  }
-});
-
-function initMap(lat = 25.276987, lng = 55.296249) {
-  mapDiv.innerHTML = '';
-  map = L.map('map').setView([lat, lng], 15);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-
-  marker = L.marker([lat, lng], {draggable: true}).addTo(map);
-
-  locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-  confirmLocation.disabled = false;
-
-  marker.on('dragend', function(e) {
-    const newPos = marker.getLatLng();
-    locationInput.value = `${newPos.lat.toFixed(6)}, ${newPos.lng.toFixed(6)}`;
-    confirmLocation.disabled = false;
-  });
-
-  map.on('click', function(e) {
-    marker.setLatLng(e.latlng);
-    locationInput.value = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
-    confirmLocation.disabled = false;
-  });
-
-  setTimeout(() => map.invalidateSize(), 200);
-}
-
-confirmLocation && confirmLocation.addEventListener('click', () => {
-  closeMapModalFn();
-});
-
-locateMeBtn && locateMeBtn.addEventListener('click', function() {
-  openMapModal();
-
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by your browser");
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      setTimeout(() => {
-        if (map && marker) {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          map.setView([lat, lng], 15);
-          marker.setLatLng([lat, lng]);
-          locationInput.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-          confirmLocation.disabled = false;
-        }
-      }, 200);
-    },
-    (error) => {
-      alert("Unable to get your location. Using default.");
-    }
-  );
 });
 
 // --- ORDER FORM SUBMISSION & WHATSAPP MODAL ---
@@ -281,24 +169,28 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   // WhatsApp message
   waSendBtn.onclick = () => {
     // Build message
-    let msg = `Hello! I just placed an order on the Bunku Bread website.%0A%0A`;
-    msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}%0A`;
-    msg += `Phone: ${orderData['phone'] || ''}%0A`;
-    msg += `Order Type: ${orderType}%0A`;
+    let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
+    msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
+    msg += `Phone: ${orderData['phone'] || ''}\n`;
+    msg += `Order Type: ${orderType}\n`;
     if(orderType === 'delivery') {
-      msg += `City: ${orderData['city'] || ''}%0AStreet: ${orderData['street'] || ''}%0AVilla/Apartment: ${orderData['villa'] || ''}%0A`;
-      msg += `Location: ${orderData['location'] || ''}%0A`;
+      msg += `City: ${orderData['city'] || ''}\nStreet: ${orderData['street'] || ''}\nVilla/Apartment: ${orderData['villa'] || ''}\n`;
     } else {
-      msg += `Car License Plate: ${orderData['license_plate'] || ''}%0A`;
+      msg += `Car License Plate: ${orderData['license_plate'] || ''}\n`;
     }
-    msg += `Boxes: ${boxes}%0A`;
-    msg += `Special Instructions: ${orderData['special'] || ''}%0A`;
-    msg += `Date: ${orderData['date'] || ''}%0A`;
-    msg += `Total: ${total} AED%0A%0A`;
-    msg += `Please find my order details above.%0A%0A`;
+    msg += `Boxes: ${boxes}\n`;
+    msg += `Special Instructions: ${orderData['special'] || ''}\n`;
+    msg += `Date: ${orderData['date'] || ''}\n`;
+    msg += `Total: ${total} AED\n\n`;
+    msg += `Please find my order details above.\n\n`;
+    // Add bank details at the bottom
+    msg += `Account Holder Name: Maryam Hussain\n`;
+    msg += `Bank Name: Mashreq Bank\n`;
+    msg += `Account Number: 019010543485\n`;
+    msg += `IBAN: AE820330000019010543485`;
 
-    // WhatsApp redirect
-    const waUrl = `https://wa.me/971544588113?text=${msg}`;
+    // WhatsApp redirect (encode the message!)
+    const waUrl = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
 
     // Hide modal and reset form
