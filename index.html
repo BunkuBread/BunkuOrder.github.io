@@ -48,10 +48,6 @@
 
         <label for="villa">Villa/Apartment:</label>
         <input type="text" id="villa" name="villa" />
-
-        <label for="locationInput">Map Location:</label>
-        <input type="text" id="locationInput" name="location" readonly placeholder="Click to select on map" />
-        <button type="button" class="locate-btn" id="locateMeBtn" title="Locate Me">📍</button>
       </div>
 
       <label for="boxesInput">
@@ -77,16 +73,6 @@
     </form>
   </div>
 
-  <!-- Map Modal -->
-  <div id="mapModal" class="modal" aria-hidden="true">
-    <div id="mapModalContent" class="modal-content">
-      <button id="closeMapModal" class="close" title="Close">&times;</button>
-      <div class="map-instructions">Drag the pin or tap to select your location:</div>
-      <div id="map"></div>
-      <button type="button" id="confirmLocation" class="confirm-btn">Confirm Location</button>
-    </div>
-  </div>
-
   <!-- WhatsApp Modal -->
   <div id="whatsappModal" class="modal" aria-hidden="true">
     <div class="modal-content">
@@ -110,8 +96,6 @@
     </div>
   </footer>
 
-  <!-- Leaflet JS (for map, optional) -->
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <!-- Supabase JS (for backend, optional) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <!-- Your main JS -->
