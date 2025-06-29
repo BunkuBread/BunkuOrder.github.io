@@ -183,11 +183,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     msg += `Date: ${orderData['date'] || ''}\n`;
     msg += `Total: ${total} AED\n\n`;
     msg += `Please find my order details above.\n\n`;
-    // Add bank details at the bottom
-    msg += `Account Holder Name: Maryam Hussain\n`;
-    msg += `Bank Name: Mashreq Bank\n`;
-    msg += `Account Number: 019010543485\n`;
-    msg += `IBAN: AE820330000019010543485`;
 
     // WhatsApp redirect (encode the message!)
     const waUrl = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
