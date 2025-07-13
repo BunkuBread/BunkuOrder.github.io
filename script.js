@@ -3,7 +3,6 @@ const SUPABASE_URL = "https://bdwjptewxthnnafobnuc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkd2pwdGV3eHRobm5hZm9ibnVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwODAzMTUsImV4cCI6MjA2NDY1NjMxNX0.z3r4pZEv27mPFkNfVkmKTHJ-S26gyCrgrbaH4dTcBSI";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- Activepieces Webhook URL ---
 const ACTIVEPIECES_WEBHOOK_URL = "https://cloud.activepieces.com/api/v1/webhooks/xgfV2PId0kguctkoS27l2";
 
 // --- DOM Elements ---
@@ -17,8 +16,13 @@ const orderSummaryDiv = document.getElementById('orderSummary');
 const infoIcon = document.getElementById('infoIcon');
 const phoneInput = document.getElementById('phoneInput');
 const orderDateInput = document.getElementById('orderDate');
+const moreSauceCheckbox = document.getElementById('moreSauce');
+const urgentDeliveryDiv = document.getElementById('urgentDeliveryDiv');
+const urgentDeliveryCheckbox = document.getElementById('urgentDelivery');
+const cityInput = document.getElementById('cityInput');
+const pickupTimeInput = document.getElementById('pickupTime');
 
-// --- WhatsApp Modal Elements ---
+// WhatsApp Modal Elements
 const waModal = document.getElementById('whatsappModal');
 const waTotal = document.getElementById('waTotal');
 const waSendBtn = document.getElementById('waSendBtn');
@@ -33,7 +37,6 @@ function formatPhoneNumber(value) {
   }
   return digits.slice(0,3) + ' ' + digits.slice(3,6) + '-' + digits.slice(6);
 }
-
 phoneInput.addEventListener('blur', () => {
   const formatted = formatPhoneNumber(phoneInput.value);
   if (formatted) {
@@ -55,7 +58,6 @@ function populateBoxesDropdown() {
   }
 }
 populateBoxesDropdown();
-
 boxesInput.addEventListener('input', () => {
   boxesSelect.value = boxesInput.value;
   updateTotal();
@@ -71,36 +73,24 @@ function updateFields() {
   if (orderType === 'pickup') {
     pickupFields.style.display = 'block';
     deliveryFields.style.display = 'none';
+    pickupTimeInput.required = true;
     document.getElementsByName('city')[0].required = false;
-    document.getElementsByName('street')[0].required = false;
-    document.getElementsByName('villa')[0].required = false;
+    document.getElementsByName('area')[0].required = false;
+    document.getElementsByName('house_number')[0].required = false;
     document.getElementsByName('license_plate')[0].required = true;
+    urgentDeliveryDiv.style.display = 'none';
   } else {
     pickupFields.style.display = 'none';
     deliveryFields.style.display = 'block';
+    pickupTimeInput.required = false;
     document.getElementsByName('city')[0].required = true;
-    document.getElementsByName('street')[0].required = true;
-    document.getElementsByName('villa')[0].required = true;
+    document.getElementsByName('area')[0].required = true;
+    document.getElementsByName('house_number')[0].required = true;
     document.getElementsByName('license_plate')[0].required = false;
+    urgentDeliveryDiv.style.display = 'none';
   }
   updateTotal();
 }
-
-function updateTotal() {
-  let boxes = parseInt(boxesInput.value, 10) || 1;
-  if (boxes < 1) boxes = 1;
-  if (boxes > 30) boxes = 30;
-  boxesInput.value = boxes;
-  boxesSelect.value = boxes;
-  const orderType = document.querySelector('input[name="order_type"]:checked').value;
-  let total = boxes * 50;
-  if (orderType === 'delivery') total += deliveryFee;
-  totalPriceSpan.textContent = total;
-  orderSummaryDiv.innerHTML =
-    `Total: <span id="totalPrice">${total}</span> AED` +
-    (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '');
-}
-
 orderTypeRadios.forEach((radio) => radio.addEventListener('change', updateFields));
 updateFields();
 
@@ -108,7 +98,6 @@ updateFields();
 const tooltip = document.createElement('div');
 tooltip.className = 'info-tooltip';
 tooltip.textContent = 'Each box contains 4 pieces of bread.';
-
 infoIcon.addEventListener('mouseenter', () => {
   const rect = infoIcon.getBoundingClientRect();
   tooltip.style.left = `${rect.left + window.scrollX}px`;
@@ -121,20 +110,102 @@ infoIcon.addEventListener('mouseleave', () => {
   if (tooltip.parentNode) tooltip.parentNode.removeChild(tooltip);
 });
 
+// --- Price Calculation ---
+function updateTotal() {
+  let boxes = parseInt(boxesInput.value, 10) || 1;
+  if (boxes < 1) boxes = 1;
+  if (boxes > 30) boxes = 30;
+  boxesInput.value = boxes;
+  boxesSelect.value = boxes;
+  const orderType = document.querySelector('input[name="order_type"]:checked').value;
+  const moreSauce = moreSauceCheckbox.checked;
+  let total = boxes * 50;
+  if (orderType === 'delivery') total += deliveryFee;
+  if (moreSauce) total += 5;
+  totalPriceSpan.textContent = total;
+  orderSummaryDiv.innerHTML =
+    `Total: <span id="totalPrice">${total}</span> AED` +
+    (orderType === 'delivery' ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '') +
+    (moreSauce ? `<br><span class="fee-note">Includes 5 AED for extra sauce</span>` : '');
+}
+moreSauceCheckbox.addEventListener('change', updateTotal);
+
+// --- Urgent Delivery Logic ---
+orderDateInput.addEventListener('change', checkUrgentDelivery);
+cityInput.addEventListener('blur', checkUrgentDelivery);
+function checkUrgentDelivery() {
+  const orderType = document.querySelector('input[name="order_type"]:checked').value;
+  if (orderType !== 'delivery') {
+    urgentDeliveryDiv.style.display = 'none';
+    urgentDeliveryCheckbox.checked = false;
+    return;
+  }
+  const city = (cityInput.value || '').trim().toLowerCase();
+  const selectedDate = new Date(orderDateInput.value);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  selectedDate.setHours(0,0,0,0);
+  const isToday = selectedDate.getTime() === today.getTime();
+  const now = new Date();
+  if (isToday && now.getHours() >= 9 &&
+      ['dubai', 'sharjah', 'ajman'].includes(city)) {
+    urgentDeliveryDiv.style.display = 'block';
+    urgentDeliveryCheckbox.required = true;
+  } else {
+    urgentDeliveryDiv.style.display = 'none';
+    urgentDeliveryCheckbox.checked = false;
+    urgentDeliveryCheckbox.required = false;
+  }
+}
+
 // --- ORDER FORM SUBMISSION & WHATSAPP MODAL ---
 document.getElementById('orderForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-
-  // Gather order data
   const formData = new FormData(this);
   let orderData = {};
   formData.forEach((v, k) => orderData[k] = v);
 
+  // Logic for same-day delivery cutoff and urgent delivery
+  let orderType = orderData['order_type'] || 'pickup';
+  let city = (orderData['city'] || '').trim().toLowerCase();
+  let selectedDate = new Date(orderData['date']);
+  let today = new Date();
+  today.setHours(0,0,0,0);
+  selectedDate.setHours(0,0,0,0);
+  let isToday = selectedDate.getTime() === today.getTime();
+  let now = new Date();
+
+  if (orderType === 'delivery' && isToday && now.getHours() >= 9) {
+    if (['dubai', 'sharjah', 'ajman'].includes(city)) {
+      if (!urgentDeliveryCheckbox.checked) {
+        alert("Same day delivery after 9 AM requires urgent delivery. Please check the urgent delivery box.");
+        urgentDeliveryDiv.style.display = 'block';
+        urgentDeliveryCheckbox.required = true;
+        return false;
+      }
+      orderData['urgent_delivery'] = true;
+    } else {
+      alert("Same day delivery is not available after 9 AM for your city.");
+      return false;
+    }
+  } else {
+    orderData['urgent_delivery'] = false;
+  }
+
+  // Pickup time required for pickup
+  if (orderType === 'pickup' && !orderData['pickup_time']) {
+    alert("Please enter your preferred pickup time.");
+    return false;
+  }
+
+  // More sauce
+  orderData['more_sauce'] = moreSauceCheckbox.checked ? true : false;
+
   // Calculate total
   let boxes = parseInt(orderData['boxes'], 10) || 1;
-  let orderType = orderData['order_type'] || 'pickup';
   let total = boxes * 50;
-  if (orderType === 'delivery') total += 35;
+  if (orderType === 'delivery') total += deliveryFee;
+  if (orderData['more_sauce']) total += 5;
 
   // Save to Supabase
   const { data, error } = await supabase
@@ -146,7 +217,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  // --- SEND TO ACTIVEPIECES ---
+  // Send to Activepieces
   try {
     await fetch(ACTIVEPIECES_WEBHOOK_URL, {
       method: 'POST',
@@ -158,37 +229,34 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     });
   } catch (err) {
     console.error('Failed to send to Activepieces:', err);
-    // Optionally alert the user or continue anyway
   }
 
-  // Show WhatsApp modal
+  // WhatsApp modal
   waTotal.textContent = total;
   waModal.classList.add('show');
   waModal.setAttribute('aria-hidden', 'false');
 
-  // WhatsApp message
   waSendBtn.onclick = () => {
-    // Build message
     let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
     msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
     msg += `Phone: ${orderData['phone'] || ''}\n`;
-    msg += `Order Type: ${orderType}\n`;
+    msg += `Order Type: ${orderType}${orderData['urgent_delivery'] ? ' (Urgent)' : ''}\n`;
     if(orderType === 'delivery') {
-      msg += `City: ${orderData['city'] || ''}\nStreet: ${orderData['street'] || ''}\nVilla/Apartment: ${orderData['villa'] || ''}\n`;
+      msg += `City: ${orderData['city'] || ''}\nArea: ${orderData['area'] || ''}\nHouse Number: ${orderData['house_number'] || ''}\n`;
+      if(orderData['urgent_delivery']) msg += `Urgent Delivery: Yes\n`;
     } else {
-      msg += `Car License Plate: ${orderData['license_plate'] || ''}\n`;
+      msg += `Car License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
     }
+    msg += `Product: ${orderData['product_type'] === 'zaatar_bomb' ? 'Zaatar Bomb' : 'OG Bunku'}\n`;
     msg += `Boxes: ${boxes}\n`;
+    msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
     msg += `Special Instructions: ${orderData['special'] || ''}\n`;
     msg += `Date: ${orderData['date'] || ''}\n`;
     msg += `Total: ${total} AED\n\n`;
     msg += `Please find my order details above.\n\n`;
 
-    // WhatsApp redirect (encode the message!)
     const waUrl = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
-
-    // Hide modal and reset form
     waModal.classList.remove('show');
     waModal.setAttribute('aria-hidden', 'true');
     document.getElementById('orderForm').reset();
