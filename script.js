@@ -187,6 +187,9 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   if (orderType === 'delivery') total += deliveryFee;
   if (orderData['more_sauce']) total += 5;
 
+  // Add total to orderData for Supabase and downstream integrations
+  orderData['total'] = total;
+
   // Save to Supabase
   const { data, error } = await supabase
     .from('orders')
