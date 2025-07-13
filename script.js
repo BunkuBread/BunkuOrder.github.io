@@ -130,32 +130,14 @@ function updateTotal() {
 }
 moreSauceCheckbox.addEventListener('change', updateTotal);
 
-// --- Urgent Delivery Logic ---
+// --- Urgent Delivery Logic (no longer needed for post-9am logic, but kept for future if needed) ---
 orderDateInput.addEventListener('change', checkUrgentDelivery);
 cityInput.addEventListener('blur', checkUrgentDelivery);
 function checkUrgentDelivery() {
-  const orderType = document.querySelector('input[name="order_type"]:checked').value;
-  if (orderType !== 'delivery') {
-    urgentDeliveryDiv.style.display = 'none';
-    urgentDeliveryCheckbox.checked = false;
-    return;
-  }
-  const city = (cityInput.value || '').trim().toLowerCase();
-  const selectedDate = new Date(orderDateInput.value);
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  selectedDate.setHours(0,0,0,0);
-  const isToday = selectedDate.getTime() === today.getTime();
-  const now = new Date();
-  if (isToday && now.getHours() >= 9 &&
-      ['dubai', 'sharjah', 'ajman'].includes(city)) {
-    urgentDeliveryDiv.style.display = 'block';
-    urgentDeliveryCheckbox.required = true;
-  } else {
-    urgentDeliveryDiv.style.display = 'none';
-    urgentDeliveryCheckbox.checked = false;
-    urgentDeliveryCheckbox.required = false;
-  }
+  // This logic is now not used for post-9am, but can be extended if you want to keep urgent delivery for other cases
+  urgentDeliveryDiv.style.display = 'none';
+  urgentDeliveryCheckbox.checked = false;
+  urgentDeliveryCheckbox.required = false;
 }
 
 // --- ORDER FORM SUBMISSION & WHATSAPP MODAL ---
@@ -165,31 +147,29 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   let orderData = {};
   formData.forEach((v, k) => orderData[k] = v);
 
-  // Logic for same-day delivery cutoff and urgent delivery
   let orderType = orderData['order_type'] || 'pickup';
   let city = (orderData['city'] || '').trim().toLowerCase();
   let selectedDate = new Date(orderData['date']);
+  let now = new Date();
   let today = new Date();
   today.setHours(0,0,0,0);
   selectedDate.setHours(0,0,0,0);
   let isToday = selectedDate.getTime() === today.getTime();
-  let now = new Date();
 
+  // === NEW LOGIC: If delivery order placed after 9am for today, set to tomorrow ===
   if (orderType === 'delivery' && isToday && now.getHours() >= 9) {
-    if (['dubai', 'sharjah', 'ajman'].includes(city)) {
-      if (!urgentDeliveryCheckbox.checked) {
-        alert("Same day delivery after 9 AM requires urgent delivery. Please check the urgent delivery box.");
-        urgentDeliveryDiv.style.display = 'block';
-        urgentDeliveryCheckbox.required = true;
-        return false;
-      }
-      orderData['urgent_delivery'] = true;
-    } else {
-      alert("Same day delivery is not available after 9 AM for your city.");
-      return false;
-    }
-  } else {
-    orderData['urgent_delivery'] = false;
+    alert("Since your order was placed after 9 AM, your delivery will be sent out the next day.");
+    // Set delivery date to tomorrow
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const dd = String(tomorrow.getDate()).padStart(2, '0');
+    orderData['date'] = `${yyyy}-${mm}-${dd}`;
+    orderDateInput.value = orderData['date'];
+    // update selectedDate/isToday for further logic if needed
+    selectedDate = new Date(orderData['date']);
+    isToday = false;
   }
 
   // Pickup time required for pickup
@@ -240,10 +220,9 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
     msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
     msg += `Phone: ${orderData['phone'] || ''}\n`;
-    msg += `Order Type: ${orderType}${orderData['urgent_delivery'] ? ' (Urgent)' : ''}\n`;
+    msg += `Order Type: ${orderType}\n`;
     if(orderType === 'delivery') {
       msg += `City: ${orderData['city'] || ''}\nArea: ${orderData['area'] || ''}\nHouse Number: ${orderData['house_number'] || ''}\n`;
-      if(orderData['urgent_delivery']) msg += `Urgent Delivery: Yes\n`;
     } else {
       msg += `Car License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
     }
