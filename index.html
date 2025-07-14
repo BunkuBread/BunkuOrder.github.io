@@ -49,19 +49,16 @@
         <input type="text" id="houseNumber" name="house_number" />
       </div>
 
-      <label>Product(s):</label>
-      <div id="productOptions">
-        <label><input type="checkbox" name="product_type" value="og_bunku" /> OG Bunku</label>
-        <label><input type="checkbox" name="product_type" value="zaatar_bomb" /> Zaatar Bomb (Korean bread with zaatar)</label>
+      <label><b>Zaatar Bomb (Korean bread with zaatar):</b></label>
+      <div class="product-row">
+        <input type="number" id="zaatarBombBoxes" name="zaatar_bomb_boxes" min="0" max="30" value="0" required />
+        <span class="product-note">boxes (4 pieces per box)</span>
       </div>
 
-      <label for="boxesInput">
-        Number of Boxes:
-        <span id="infoIcon" class="info-icon" title="Each box contains 4 pieces of bread.">ℹ️</span>
-      </label>
-      <div class="boxes-row">
-        <input type="number" id="boxesInput" name="boxes" min="1" max="30" value="1" required class="boxes-desktop" />
-        <select id="boxesSelect" class="boxes-mobile"></select>
+      <label><b>OG Bunku:</b></label>
+      <div class="product-row">
+        <input type="number" id="ogBunkuBoxes" name="og_bunku_boxes" min="0" max="30" value="0" required />
+        <span class="product-note">boxes (4 pieces per box)</span>
       </div>
 
       <label>
