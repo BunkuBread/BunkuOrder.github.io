@@ -49,11 +49,11 @@
         <input type="text" id="houseNumber" name="house_number" />
       </div>
 
-      <label for="productType">Product:</label>
-      <select id="productType" name="product_type" required>
-        <option value="og_bunku">OG Bunku</option>
-        <option value="zaatar_bomb">Zaatar Bomb (Korean bread with zaatar)</option>
-      </select>
+      <label>Product(s):</label>
+      <div id="productOptions">
+        <label><input type="checkbox" name="product_type" value="og_bunku" /> OG Bunku</label>
+        <label><input type="checkbox" name="product_type" value="zaatar_bomb" /> Zaatar Bomb (Korean bread with zaatar)</label>
+      </div>
 
       <label for="boxesInput">
         Number of Boxes:
