@@ -130,11 +130,10 @@ function updateTotal() {
 }
 moreSauceCheckbox.addEventListener('change', updateTotal);
 
-// --- Urgent Delivery Logic (no longer needed for post-9am logic, but kept for future if needed) ---
+// --- Urgent Delivery Logic (not used for post-9am logic, kept for future) ---
 orderDateInput.addEventListener('change', checkUrgentDelivery);
 cityInput.addEventListener('blur', checkUrgentDelivery);
 function checkUrgentDelivery() {
-  // This logic is now not used for post-9am, but can be extended if you want to keep urgent delivery for other cases
   urgentDeliveryDiv.style.display = 'none';
   urgentDeliveryCheckbox.checked = false;
   urgentDeliveryCheckbox.required = false;
@@ -145,7 +144,22 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   e.preventDefault();
   const formData = new FormData(this);
   let orderData = {};
-  formData.forEach((v, k) => orderData[k] = v);
+
+  // --- Multi-product: collect all checked products as array ---
+  formData.forEach((v, k) => {
+    if (k === 'product_type') {
+      if (!orderData[k]) orderData[k] = [];
+      orderData[k].push(v);
+    } else {
+      orderData[k] = v;
+    }
+  });
+
+  // Require at least one product
+  if (!orderData['product_type'] || orderData['product_type'].length === 0) {
+    alert("Please select at least one product.");
+    return false;
+  }
 
   let orderType = orderData['order_type'] || 'pickup';
   let city = (orderData['city'] || '').trim().toLowerCase();
@@ -156,10 +170,9 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   selectedDate.setHours(0,0,0,0);
   let isToday = selectedDate.getTime() === today.getTime();
 
-  // === NEW LOGIC: If delivery order placed after 9am for today, set to tomorrow ===
+  // === If delivery order placed after 9am for today, set to tomorrow ===
   if (orderType === 'delivery' && isToday && now.getHours() >= 9) {
     alert("Since your order was placed after 9 AM, your delivery will be sent out the next day.");
-    // Set delivery date to tomorrow
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     const yyyy = tomorrow.getFullYear();
@@ -167,7 +180,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     const dd = String(tomorrow.getDate()).padStart(2, '0');
     orderData['date'] = `${yyyy}-${mm}-${dd}`;
     orderDateInput.value = orderData['date'];
-    // update selectedDate/isToday for further logic if needed
     selectedDate = new Date(orderData['date']);
     isToday = false;
   }
@@ -187,8 +199,12 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   if (orderType === 'delivery') total += deliveryFee;
   if (orderData['more_sauce']) total += 5;
 
-  // Add total to orderData for Supabase and downstream integrations
   orderData['total'] = total;
+
+  // Store product_type as comma-separated string for Supabase (or use array if your DB supports it)
+  if (Array.isArray(orderData['product_type'])) {
+    orderData['product_type'] = orderData['product_type'].join(',');
+  }
 
   // Save to Supabase
   const { data, error } = await supabase
@@ -220,6 +236,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   waModal.setAttribute('aria-hidden', 'false');
 
   waSendBtn.onclick = () => {
+    // Build product name(s) for WhatsApp
+    let productNames = [];
+    if (orderData['product_type']) {
+      const arr = orderData['product_type'].split(',');
+      if (arr.includes('og_bunku')) productNames.push('OG Bunku');
+      if (arr.includes('zaatar_bomb')) productNames.push('Zaatar Bomb');
+    }
+
     let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
     msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
     msg += `Phone: ${orderData['phone'] || ''}\n`;
@@ -229,7 +253,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     } else {
       msg += `Car License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
     }
-    msg += `Product: ${orderData['product_type'] === 'zaatar_bomb' ? 'Zaatar Bomb' : 'OG Bunku'}\n`;
+    msg += `Product(s): ${productNames.join(' & ')}\n`;
     msg += `Boxes: ${boxes}\n`;
     msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
     msg += `Special Instructions: ${orderData['special'] || ''}\n`;
