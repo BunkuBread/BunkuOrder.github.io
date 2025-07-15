@@ -92,7 +92,7 @@ zaatarBombBoxesInput.addEventListener('input', updateTotal);
 ogBunkuBoxesInput.addEventListener('input', updateTotal);
 moreSauceCheckbox.addEventListener('change', updateTotal);
 
-// --- Urgent Delivery Logic (not used for post-9am logic, kept for future) ---
+// --- Urgent Delivery Logic ---
 orderDateInput.addEventListener('change', checkUrgentDelivery);
 cityInput.addEventListener('blur', checkUrgentDelivery);
 function checkUrgentDelivery() {
@@ -116,16 +116,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  let orderType = orderData['order_type'] || 'pickup';
-  let city = (orderData['city'] || '').trim().toLowerCase();
-  let selectedDate = new Date(orderData['date']);
+  const orderType = orderData['order_type'] || 'pickup';
   let now = new Date();
+  let selectedDate = new Date(orderData['date']);
   let today = new Date();
-  today.setHours(0,0,0,0);
-  selectedDate.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
+  selectedDate.setHours(0, 0, 0, 0);
   let isToday = selectedDate.getTime() === today.getTime();
 
-  // === If delivery order placed after 9am for today, set to tomorrow ===
   if (orderType === 'delivery' && isToday && now.getHours() >= 9) {
     alert("Since your order was placed after 9 AM, your delivery will be sent out the next day.");
     const tomorrow = new Date(now);
@@ -139,50 +137,42 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     isToday = false;
   }
 
-  // Pickup time required for pickup
   if (orderType === 'pickup' && !orderData['pickup_time']) {
     alert("Please enter your preferred pickup time.");
     return false;
   }
 
-  // More sauce
-  orderData['more_sauce'] = moreSauceCheckbox.checked ? true : false;
+  // ✅ >>> FIX: Replace empty string with null for pickup_time
+  if (orderData['pickup_time'] === '') {
+    orderData['pickup_time'] = null;
+  }
 
-  // Add box counts to orderData
+  orderData['more_sauce'] = moreSauceCheckbox.checked ? true : false;
   orderData['zaatar_bomb_boxes'] = zaatarBombBoxes;
   orderData['og_bunku_boxes'] = ogBunkuBoxes;
 
-  // Calculate total
   let total = (zaatarBombBoxes + ogBunkuBoxes) * 50;
-  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0) total += deliveryFee;
+  if (orderType === 'delivery') total += deliveryFee;
   if (orderData['more_sauce']) total += 5;
   orderData['total'] = total;
 
-  // Save to Supabase
-  const { data, error } = await supabase
-    .from('orders')
-    .insert([orderData]);
+  const { data, error } = await supabase.from('orders').insert([orderData]);
   if (error) {
-    alert('Sorry, there was an error placing your order. Please try again.');
+    alert('Supabase error: ' + error.message);
     console.error(error);
     return false;
   }
 
-  // Send to Activepieces
   try {
     await fetch(ACTIVEPIECES_WEBHOOK_URL, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        ...orderData,
-        total: total
-      })
+      body: JSON.stringify({...orderData})
     });
   } catch (err) {
     console.error('Failed to send to Activepieces:', err);
   }
 
-  // WhatsApp modal
   waTotal.textContent = total;
   waModal.classList.add('show');
   waModal.setAttribute('aria-hidden', 'false');
