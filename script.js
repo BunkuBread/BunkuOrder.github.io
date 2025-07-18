@@ -79,7 +79,8 @@ function updateTotal() {
   const ogBunkuBoxes = parseInt(ogBunkuBoxesInput.value, 10) || 0;
   const orderType = document.querySelector('input[name="order_type"]:checked').value;
   const moreSauce = moreSauceCheckbox.checked;
-  let total = (zaatarBombBoxes + ogBunkuBoxes) * 50;
+  // --- Price adjustment here ---
+  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50);
   if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0) total += deliveryFee;
   if (moreSauce) total += 5;
   totalPriceSpan.textContent = total;
@@ -108,6 +109,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   let orderData = {};
   formData.forEach((v, k) => orderData[k] = v);
 
+  // Box counts and prices
   const zaatarBombBoxes = parseInt(zaatarBombBoxesInput.value, 10) || 0;
   const ogBunkuBoxes = parseInt(ogBunkuBoxesInput.value, 10) || 0;
 
@@ -142,7 +144,7 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  // ✅ >>> FIX: Replace empty string with null for pickup_time
+  // Fix: Replace empty string with null for pickup_time
   if (orderData['pickup_time'] === '') {
     orderData['pickup_time'] = null;
   }
@@ -151,8 +153,9 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   orderData['zaatar_bomb_boxes'] = zaatarBombBoxes;
   orderData['og_bunku_boxes'] = ogBunkuBoxes;
 
-  let total = (zaatarBombBoxes + ogBunkuBoxes) * 50;
-  if (orderType === 'delivery') total += deliveryFee;
+  // --- New pricing logic here ---
+  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50);
+  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0) total += deliveryFee;
   if (orderData['more_sauce']) total += 5;
   orderData['total'] = total;
 
@@ -178,23 +181,36 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   waModal.setAttribute('aria-hidden', 'false');
 
   waSendBtn.onclick = () => {
+    // --- WhatsApp Message, now type-specific and clear ---
     let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
     msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
     msg += `Phone: ${orderData['phone'] || ''}\n`;
-    msg += `Order Type: ${orderType}\n`;
-    if(orderType === 'delivery') {
+
+    if (orderType === 'delivery') {
+      msg += `Order Type: Delivery\n`;
       msg += `City: ${orderData['city'] || ''}\nArea: ${orderData['area'] || ''}\nHouse Number: ${orderData['house_number'] || ''}\n`;
+      msg += `Products:\n`;
+      msg += `- Zaatar Bomb: ${zaatarBombBoxes} box(es) (55 AED each)\n`;
+      msg += `- OG Bunku: ${ogBunkuBoxes} box(es) (50 AED each)\n`;
+      msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
+      msg += `Special Instructions: ${orderData['special'] || ''}\n`;
+      msg += `Date: ${orderData['date'] || ''}\n`;
+      msg += `Total: ${total} AED\n\n`;
+      msg += `Delivery Address: ${orderData['house_number'] || ''}, ${orderData['area'] || ''}, ${orderData['city'] || ''}\n`;
     } else {
+      msg += `Order Type: Pickup\n`;
       msg += `Car License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
+      msg += `Products:\n`;
+      msg += `- Zaatar Bomb: ${zaatarBombBoxes} box(es) (55 AED each)\n`;
+      msg += `- OG Bunku: ${ogBunkuBoxes} box(es) (50 AED each)\n`;
+      msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
+      msg += `Special Instructions: ${orderData['special'] || ''}\n`;
+      msg += `Date: ${orderData['date'] || ''}\n`;
+      msg += `Total: ${total} AED\n\n`;
+      msg += `Pickup Details: Car License Plate - ${orderData['license_plate'] || ''}, Time - ${orderData['pickup_time'] || ''}\n`;
     }
-    msg += `Product(s):\n`;
-    msg += `- Zaatar Bomb: ${zaatarBombBoxes} box(es)\n`;
-    msg += `- OG Bunku: ${ogBunkuBoxes} box(es)\n`;
-    msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
-    msg += `Special Instructions: ${orderData['special'] || ''}\n`;
-    msg += `Date: ${orderData['date'] || ''}\n`;
-    msg += `Total: ${total} AED\n\n`;
-    msg += `Please find my order details above.\n\n`;
+
+    msg += `Please find my order details above.\n`;
 
     const waUrl = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
     window.open(waUrl, '_blank');
