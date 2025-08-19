@@ -21,6 +21,11 @@ const pickupTimeInput = document.getElementById('pickupTime');
 const zaatarBombBoxesInput = document.getElementById('zaatarBombBoxes');
 const ogBunkuBoxesInput = document.getElementById('ogBunkuBoxes');
 
+// --- NEW FLAVOR INPUTS ---
+const diabetesBoxesInput = document.getElementById('diabetesBoxes');
+const strawberryHavenBoxesInput = document.getElementById('strawberryHavenBoxes');
+const berryBlastBoxesInput = document.getElementById('berryBlastBoxes');
+
 // WhatsApp Modal Elements
 const waModal = document.getElementById('whatsappModal');
 const waTotal = document.getElementById('waTotal');
@@ -77,20 +82,27 @@ updateFields();
 function updateTotal() {
   const zaatarBombBoxes = parseInt(zaatarBombBoxesInput.value, 10) || 0;
   const ogBunkuBoxes = parseInt(ogBunkuBoxesInput.value, 10) || 0;
+  const diabetesBoxes = parseInt(diabetesBoxesInput.value, 10) || 0;
+  const strawberryHavenBoxes = parseInt(strawberryHavenBoxesInput.value, 10) || 0;
+  const berryBlastBoxes = parseInt(berryBlastBoxesInput.value, 10) || 0;
   const orderType = document.querySelector('input[name="order_type"]:checked').value;
   const moreSauce = moreSauceCheckbox.checked;
-  // --- Price adjustment here ---
-  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50);
-  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0) total += deliveryFee;
+
+  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50) + 
+              (diabetesBoxes * 55) + (strawberryHavenBoxes * 55) + (berryBlastBoxes * 55);
+
+  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes + diabetesBoxes + strawberryHavenBoxes + berryBlastBoxes) > 0) total += deliveryFee;
   if (moreSauce) total += 5;
+
   totalPriceSpan.textContent = total;
   orderSummaryDiv.innerHTML =
     `Total: <span id="totalPrice">${total}</span> AED` +
-    (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0 ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '') +
+    (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes + diabetesBoxes + strawberryHavenBoxes + berryBlastBoxes) > 0 ? `<br><span class="fee-note">Includes 35 AED delivery fee</span>` : '') +
     (moreSauce ? `<br><span class="fee-note">Includes 5 AED for extra sauce</span>` : '');
 }
-zaatarBombBoxesInput.addEventListener('input', updateTotal);
-ogBunkuBoxesInput.addEventListener('input', updateTotal);
+
+// --- LISTENERS ---
+[zaatarBombBoxesInput, ogBunkuBoxesInput, diabetesBoxesInput, strawberryHavenBoxesInput, berryBlastBoxesInput].forEach(input => input.addEventListener('input', updateTotal));
 moreSauceCheckbox.addEventListener('change', updateTotal);
 
 // --- Urgent Delivery Logic ---
@@ -109,11 +121,13 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   let orderData = {};
   formData.forEach((v, k) => orderData[k] = v);
 
-  // Box counts and prices
   const zaatarBombBoxes = parseInt(zaatarBombBoxesInput.value, 10) || 0;
   const ogBunkuBoxes = parseInt(ogBunkuBoxesInput.value, 10) || 0;
+  const diabetesBoxes = parseInt(diabetesBoxesInput.value, 10) || 0;
+  const strawberryHavenBoxes = parseInt(strawberryHavenBoxesInput.value, 10) || 0;
+  const berryBlastBoxes = parseInt(berryBlastBoxesInput.value, 10) || 0;
 
-  if (zaatarBombBoxes + ogBunkuBoxes === 0) {
+  if ((zaatarBombBoxes + ogBunkuBoxes + diabetesBoxes + strawberryHavenBoxes + berryBlastBoxes) === 0) {
     alert("Please order at least one box of bread.");
     return false;
   }
@@ -144,7 +158,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     return false;
   }
 
-  // Fix: Replace empty string with null for pickup_time
   if (orderData['pickup_time'] === '') {
     orderData['pickup_time'] = null;
   }
@@ -152,10 +165,14 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   orderData['more_sauce'] = moreSauceCheckbox.checked ? true : false;
   orderData['zaatar_bomb_boxes'] = zaatarBombBoxes;
   orderData['og_bunku_boxes'] = ogBunkuBoxes;
+  orderData['diabetes_boxes'] = diabetesBoxes;
+  orderData['strawberry_haven_boxes'] = strawberryHavenBoxes;
+  orderData['berry_blast_boxes'] = berryBlastBoxes;
 
-  // --- New pricing logic here ---
-  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50);
-  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes) > 0) total += deliveryFee;
+  let total = (zaatarBombBoxes * 55) + (ogBunkuBoxes * 50) +
+              (diabetesBoxes * 55) + (strawberryHavenBoxes * 55) + (berryBlastBoxes * 55);
+
+  if (orderType === 'delivery' && (zaatarBombBoxes + ogBunkuBoxes + diabetesBoxes + strawberryHavenBoxes + berryBlastBoxes) > 0) total += deliveryFee;
   if (orderData['more_sauce']) total += 5;
   orderData['total'] = total;
 
@@ -181,7 +198,6 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
   waModal.setAttribute('aria-hidden', 'false');
 
   waSendBtn.onclick = () => {
-    // --- WhatsApp Message, now type-specific and clear ---
     let msg = `Hello! I just placed an order on the Bunku Bread website.\n\n`;
     msg += `Name: ${orderData['first_name'] || ''} ${orderData['last_name'] || ''}\n`;
     msg += `Phone: ${orderData['phone'] || ''}\n`;
@@ -189,34 +205,23 @@ document.getElementById('orderForm').addEventListener('submit', async function(e
     if (orderType === 'delivery') {
       msg += `Order Type: Delivery\n`;
       msg += `City: ${orderData['city'] || ''}\nArea: ${orderData['area'] || ''}\nHouse Number: ${orderData['house_number'] || ''}\n`;
-      msg += `Products:\n`;
-      msg += `- Zaatar Bomb: ${zaatarBombBoxes} box(es) (55 AED each)\n`;
-      msg += `- OG Bunku: ${ogBunkuBoxes} box(es) (50 AED each)\n`;
-      msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
-      msg += `Special Instructions: ${orderData['special'] || ''}\n`;
-      msg += `Date: ${orderData['date'] || ''}\n`;
-      msg += `Total: ${total} AED\n\n`;
-      msg += `Delivery Address: ${orderData['house_number'] || ''}, ${orderData['area'] || ''}, ${orderData['city'] || ''}\n`;
     } else {
       msg += `Order Type: Pickup\n`;
-      msg += `Car License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
-      msg += `Products:\n`;
-      msg += `- Zaatar Bomb: ${zaatarBombBoxes} box(es) (55 AED each)\n`;
-      msg += `- OG Bunku: ${ogBunkuBoxes} box(es) (50 AED each)\n`;
-      msg += `Extra Sauce: ${orderData['more_sauce'] ? 'Yes' : 'No'}\n`;
-      msg += `Special Instructions: ${orderData['special'] || ''}\n`;
-      msg += `Date: ${orderData['date'] || ''}\n`;
-      msg += `Total: ${total} AED\n\n`;
-      msg += `Pickup Details: Car License Plate - ${orderData['license_plate'] || ''}, Time - ${orderData['pickup_time'] || ''}\n`;
+      msg += `License Plate: ${orderData['license_plate'] || ''}\nPickup Time: ${orderData['pickup_time'] || ''}\n`;
     }
 
-    msg += `Please find my order details above.\n`;
+    msg += `\nOrders:\n`;
+    if (zaatarBombBoxes > 0) msg += `Zaatar Bomb: ${zaatarBombBoxes} boxes\n`;
+    if (ogBunkuBoxes > 0) msg += `OG Bunku: ${ogBunkuBoxes} boxes\n`;
+    if (diabetesBoxes > 0) msg += `Diabetes: ${diabetesBoxes} boxes\n`;
+    if (strawberryHavenBoxes > 0) msg += `Strawberry Haven: ${strawberryHavenBoxes} boxes\n`;
+    if (berryBlastBoxes > 0) msg += `Berry Blast: ${berryBlastBoxes} boxes\n`;
+    if (orderData['more_sauce']) msg += `Extra Sauce: Yes\n`;
+    if (orderData['special']) msg += `Special Instructions: ${orderData['special']}\n`;
 
-    const waUrl = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
-    window.open(waUrl, '_blank');
-    waModal.classList.remove('show');
-    waModal.setAttribute('aria-hidden', 'true');
-    document.getElementById('orderForm').reset();
-    updateTotal();
+    msg += `Date: ${orderData['date']}\nTotal: ${total} AED`;
+
+    const waLink = `https://wa.me/971544588113?text=${encodeURIComponent(msg)}`;
+    window.open(waLink, '_blank');
   };
 });
