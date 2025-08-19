@@ -1,3 +1,4 @@
+/* --- Background Gradient --- */
 .gradient-bg {
   position: fixed;
   top: 0; left: 0;
@@ -21,6 +22,7 @@
   100% { background-position: 0% 50%; }
 }
 
+/* --- Body --- */
 body {
   font-family: 'Quicksand', 'Poppins', Arial, sans-serif;
   background: #fffbe9;
@@ -32,6 +34,7 @@ body {
   overflow-x: hidden;
 }
 
+/* --- Main Container --- */
 .order-main {
   max-width: 430px;
   margin: 48px auto;
@@ -43,6 +46,7 @@ body {
   z-index: 1;
 }
 
+/* --- Logo --- */
 .logo-img {
   display: block;
   max-width: 130px;
@@ -70,6 +74,7 @@ body {
   font-family: 'Quicksand', Arial, sans-serif;
 }
 
+/* --- Form --- */
 .order-form {
   display: flex;
   flex-direction: column;
@@ -109,6 +114,7 @@ body {
   accent-color: #ffb347;
 }
 
+/* --- Submit / Buttons --- */
 .order-form button[type='submit'],
 .order-form button[type='button'] {
   margin-top: 18px;
@@ -128,6 +134,7 @@ body {
   background: #ffa500;
 }
 
+/* --- Info / Locate Icons --- */
 .info-icon {
   font-size: 1em;
   margin-left: 4px;
@@ -135,7 +142,6 @@ body {
   cursor: pointer;
   vertical-align: middle;
 }
-
 .locate-btn {
   background: none;
   border: none;
@@ -148,6 +154,23 @@ body {
 }
 .locate-btn:active { color: #ffa500; }
 
+/* --- Product Rows --- */
+.product-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+.product-note {
+  font-size: 0.85em;
+  color: #a0522d;
+}
+
+/* --- Special Instructions / Summary --- */
+textarea {
+  resize: none;
+}
+
 .order-summary {
   background: #fffbe9;
   border: 1px dashed #ffb347;
@@ -158,13 +181,11 @@ body {
   color: #a0522d;
   text-align: center;
 }
-
 .fee-note {
   font-size: 0.97em;
   color: #a0522d;
   opacity: 0.8;
 }
-
 .order-info {
   margin-top: 32px;
   text-align: center;
@@ -177,7 +198,7 @@ body {
   background: #fff0f0 !important;
 }
 
-/* Responsive boxes input */
+/* --- Responsive Boxes Input --- */
 @media (max-width: 700px), (pointer: coarse) {
   .boxes-desktop { display: none !important; }
   .boxes-mobile { display: block !important; }
@@ -187,6 +208,7 @@ body {
   .boxes-mobile { display: none !important; }
 }
 
+/* --- Info Tooltip --- */
 .info-tooltip {
   position: absolute;
   background: #fffbe9;
@@ -205,7 +227,7 @@ body {
   display: none;
 }
 
-/* Modal Styles */
+/* --- Modal --- */
 .modal {
   display: none;
   position: fixed;
@@ -273,7 +295,7 @@ body {
   margin-bottom: 10px;
 }
 
-/* WhatsApp Modal Styles */
+/* --- WhatsApp Modal --- */
 #whatsappModal {
   display: none;
   position: fixed;
@@ -323,7 +345,7 @@ body {
   to {transform: translateY(0); opacity: 1;}
 }
 
-/* Footer */
+/* --- Footer --- */
 .site-footer {
   background: #fffbe9;
   border-top: 1.5px solid #ffd699;
@@ -354,7 +376,7 @@ body {
   opacity: 0.7;
 }
 
-/* Responsive tweaks */
+/* --- Responsive tweaks --- */
 @media (max-width: 700px) {
   .order-main {
     padding: 10px 2vw;
@@ -372,4 +394,18 @@ body {
     width: 70%;
     margin-bottom: 12px;
   }
+}
+
+/* --- New Flavors --- */
+/* Use same style as product-row and product-note */
+#diabetesBoxes,
+#strawberryHavenBoxes,
+#berryBlastBoxes {
+  width: 80px;
+  padding: 8px;
+  border: 1px solid #ffd699;
+  border-radius: 7px;
+  font-size: 1rem;
+  background: #fffbe9;
+  color: #4d3b2f;
 }
